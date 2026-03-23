@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <!-- PWA & Mobile Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <meta name="theme-color" content="#0a0a0a">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2344/2344132.png">
-    
-    <title>網約車司機收入助手</title>
+    <title>司機收入助手 (完整圖例版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -22,10 +17,9 @@
         body {
             background-color: #0a0a0a;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             -webkit-font-smoothing: antialiased;
             touch-action: manipulation;
-            user-select: none;
         }
         .app-container {
             padding-top: calc(var(--safe-top) + 20px);
@@ -36,36 +30,49 @@
             border: 1px solid #2c2c2e !important;
             color: white !important;
             -webkit-appearance: none;
-            border-radius: 12px;
+            min-width: 0;
         }
         input:focus {
             border-color: #0a84ff !important;
             outline: none;
         }
+        .platform-tag {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            display: block;
+        }
         .glass-card {
             background: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .active-press:active {
-            transform: scale(0.96);
+            transform: scale(0.97);
             transition: transform 0.1s;
         }
         .bar-container {
-            height: 160px;
+            height: 180px;
             display: flex;
             align-items: flex-end;
-            gap: 10px;
-            padding: 10px 0;
+            gap: 6px;
+            padding: 40px 0 10px 0;
         }
         .bar-segment {
-            transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: height 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
         }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+        .inner-label {
+            font-size: 7px;
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.6);
+            white-space: nowrap;
+            pointer-events: none;
         }
         #date-input {
             position: absolute;
@@ -76,14 +83,40 @@
             height: 100%;
             cursor: pointer;
         }
+        #autosave-indicator {
+            font-size: 10px;
+            color: #4ade80;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .bar-label-top {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 900;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+        .legend-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
     </style>
 </head>
-<body class="px-4">
+<body class="px-4 overflow-x-hidden">
     <div class="app-container max-w-md mx-auto space-y-6">
-        <!-- Header -->
-        <header class="flex justify-between items-end">
+        <!-- 標頭 -->
+        <header class="flex justify-between items-end mb-2">
             <div class="relative">
-                <h1 class="text-3xl font-black tracking-tight text-white">司機助手</h1>
+                <h1 class="text-3xl font-black tracking-tight text-white flex items-center gap-2">
+                    收入助手
+                    <span id="autosave-indicator">● 已同步</span>
+                </h1>
                 <div class="relative inline-block mt-1">
                     <p id="display-date-text" class="text-blue-500 font-bold flex items-center gap-1 underline decoration-dotted underline-offset-4">
                         載入中... 📅
@@ -92,286 +125,253 @@
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-[10px] text-gray-500 block font-bold uppercase">該日純利</span>
-                <span id="top-profit" class="text-2xl font-black text-green-500">$0</span>
+                <span class="text-[10px] text-gray-600 block uppercase font-bold tracking-widest">當日盈利</span>
+                <span id="top-profit" class="text-xl font-bold text-green-500">$0</span>
             </div>
         </header>
 
-        <!-- Income Section -->
-        <section class="glass-card rounded-[2.5rem] p-6 shadow-2xl">
-            <div class="flex items-center gap-2 mb-5">
-                <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                <h2 class="font-bold text-gray-300">平台流水</h2>
-            </div>
-            
+        <!-- 數據輸入框 -->
+        <section class="glass-card rounded-3xl p-5 shadow-2xl">
+            <h2 class="text-sm font-bold text-gray-400 mb-4 flex items-center">
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> 平台流水 (即時更新)
+            </h2>
             <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-blue-500 ml-1">UBER</label>
-                    <input type="number" id="in-uber" inputmode="decimal" placeholder="0" class="w-full py-3 px-4 text-lg font-bold">
+                <div>
+                    <span class="platform-tag text-blue-400">UBER</span>
+                    <input type="number" id="in-uber" inputmode="decimal" placeholder="0" class="w-full rounded-2xl py-3 px-4 text-lg font-bold">
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-orange-500 ml-1">高德 (AMAP)</label>
-                    <input type="number" id="in-amap" inputmode="decimal" placeholder="0" class="w-full py-3 px-4 text-lg font-bold">
+                <div>
+                    <span class="platform-tag text-orange-400">高德 (AMAP)</span>
+                    <input type="number" id="in-amap" inputmode="decimal" placeholder="0" class="w-full rounded-2xl py-3 px-4 text-lg font-bold">
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-yellow-500 ml-1">滴滴 (DIDI)</label>
-                    <input type="number" id="in-didi" inputmode="decimal" placeholder="0" class="w-full py-3 px-4 text-lg font-bold">
+                <div>
+                    <span class="platform-tag text-yellow-400">滴滴 (DIDI)</span>
+                    <input type="number" id="in-didi" inputmode="decimal" placeholder="0" class="w-full rounded-2xl py-3 px-4 text-lg font-bold">
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-green-500 ml-1">TADA</label>
-                    <input type="number" id="in-tada" inputmode="decimal" placeholder="0" class="w-full py-3 px-4 text-lg font-bold">
+                <div>
+                    <span class="platform-tag text-green-400">TADA</span>
+                    <input type="number" id="in-tada" inputmode="decimal" placeholder="0" class="w-full rounded-2xl py-3 px-4 text-lg font-bold">
                 </div>
             </div>
 
-            <!-- Expenses Section -->
-            <div class="mt-8 pt-6 border-t border-white/5">
-                <div class="flex items-center gap-2 mb-5">
-                    <div class="w-1.5 h-6 bg-red-600 rounded-full"></div>
-                    <h2 class="font-bold text-gray-300">支出明細</h2>
-                </div>
+            <div class="mt-6 border-t border-white/5 pt-6">
+                <h2 class="text-sm font-bold text-gray-400 mb-4 flex items-center">
+                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span> 支出明細
+                </h2>
                 
                 <div class="flex gap-2 mb-4">
-                    <input type="number" id="new-exp-val" inputmode="decimal" placeholder="輸入單筆支出金額" class="flex-1 py-3 px-4 text-sm font-bold">
-                    <button onclick="addExpenseInline()" class="bg-red-600 text-white px-6 rounded-xl font-bold active-press shadow-lg shadow-red-900/20">
+                    <input type="number" id="new-exp-val" inputmode="decimal" placeholder="金額" class="flex-1 rounded-xl py-2 px-4 text-sm font-bold">
+                    <button onclick="addExpenseInline()" class="bg-red-500 text-white px-5 rounded-xl font-bold active-press text-sm whitespace-nowrap">
                         新增
                     </button>
                 </div>
                 
-                <div id="expense-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1"></div>
+                <div id="expense-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1 text-xs"></div>
 
-                <div class="flex items-center justify-between bg-white/5 rounded-2xl p-4 border border-white/5">
-                    <span class="text-gray-400 font-bold text-xs uppercase tracking-wider">今日支出總計</span>
-                    <span class="text-xl font-black text-red-500">$<span id="display-total-exp">0</span></span>
+                <div class="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+                    <span class="text-red-400 font-bold text-xs uppercase tracking-tighter">當日支出</span>
+                    <span class="text-lg font-black text-red-500">$<span id="display-total-exp">0</span></span>
                 </div>
             </div>
-
-            <button onclick="save()" class="w-full mt-6 bg-white text-black py-4 rounded-2xl font-black text-lg active-press shadow-xl transition-all hover:bg-gray-200">
-                儲存當日數據
-            </button>
         </section>
 
-        <!-- Stats Section -->
-        <section class="glass-card rounded-[2.5rem] p-6 shadow-xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-black text-lg text-white">本週分析</h2>
-                <button onclick="clearAll()" class="text-[10px] text-gray-600 border border-gray-800 px-3 py-1.5 rounded-full font-bold uppercase tracking-widest active-press">清空數據</button>
+        <!-- 圖表分析 -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl">
+            <div class="flex justify-between items-center mb-1">
+                <h2 class="font-bold text-lg text-white">本週趨勢</h2>
+                <button onclick="clearAll()" class="text-[9px] text-gray-600 border border-gray-800 px-2 py-1 rounded-lg">清空數據</button>
             </div>
 
-            <!-- Bar Chart -->
-            <div class="mb-4">
+            <div>
+                <!-- 圖表主體 -->
                 <div id="chart-container" class="bar-container border-b border-white/10"></div>
-                <div class="flex justify-between px-1 mt-3 text-[10px] text-gray-600 font-black">
-                    <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+                
+                <!-- 星期標記 -->
+                <div class="flex justify-between mt-2 mb-4 text-[10px] text-gray-500 font-bold text-center">
+                    <span class="flex-1">一</span><span class="flex-1">二</span><span class="flex-1">三</span><span class="flex-1">四</span><span class="flex-1">五</span><span class="flex-1">六</span><span class="flex-1">日</span>
+                </div>
+
+                <!-- 圖例 Legend -->
+                <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 py-3 border-t border-white/5">
+                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        <span class="legend-dot bg-blue-500"></span> Uber
+                    </div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        <span class="legend-dot bg-orange-500"></span> 高德
+                    </div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        <span class="legend-dot bg-yellow-500"></span> 滴滴
+                    </div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        <span class="legend-dot bg-green-500"></span> Tada
+                    </div>
                 </div>
             </div>
-
-            <div id="stats-content" class="space-y-4 pt-4"></div>
+            
+            <div id="stats-content"></div>
         </section>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-white text-black px-8 py-4 rounded-3xl text-sm font-black opacity-0 shadow-2xl transition-all duration-300 pointer-events-none z-50">
-        已儲存
     </div>
 
     <script>
-        const STORAGE_KEY = 'driver_helper_pro_v1';
+        const STORAGE_KEY = 'driver_income_v8_auto';
         let db = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         let currentDayExpenses = [];
         let selectedDate = new Date().toISOString().split('T')[0];
+        let saveTimer;
 
-        function formatDisplayDate(dateStr) {
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('zh-HK', { month: 'long', day: 'numeric', weekday: 'short' });
-        }
-
-        function getWeekKeys(baseDateStr) {
-            const now = new Date(baseDateStr);
+        function getWeekKeys(base) {
+            const now = new Date(base);
             const day = now.getDay();
-            const diff = now.getDate() - (day === 0 ? 6 : day - 1); 
+            const diff = now.getDate() - (day === 0 ? 6 : day - 1);
             const start = new Date(now.setDate(diff));
             const keys = [];
             for (let i = 0; i < 7; i++) {
-                const temp = new Date(start);
-                temp.setDate(start.getDate() + i);
-                keys.push(temp.toISOString().split('T')[0]);
+                const t = new Date(start);
+                t.setDate(start.getDate() + i);
+                keys.push(t.toISOString().split('T')[0]);
             }
             return keys;
         }
 
         function loadDateData(dateStr) {
             selectedDate = dateStr;
-            document.getElementById('display-date-text').innerText = formatDisplayDate(dateStr) + " 📅";
+            const d = new Date(dateStr);
+            document.getElementById('display-date-text').innerText = d.toLocaleDateString('zh-HK', { month: 'long', day: 'numeric', weekday: 'short' }) + " 📅";
             
-            if (db[dateStr]) {
-                document.getElementById('in-uber').value = db[dateStr].u || "";
-                document.getElementById('in-amap').value = db[dateStr].a || "";
-                document.getElementById('in-didi').value = db[dateStr].d || "";
-                document.getElementById('in-tada').value = db[dateStr].t || "";
-                currentDayExpenses = db[dateStr].e_list || [];
-            } else {
-                document.getElementById('in-uber').value = "";
-                document.getElementById('in-amap').value = "";
-                document.getElementById('in-didi').value = "";
-                document.getElementById('in-tada').value = "";
-                currentDayExpenses = [];
-            }
-            renderExpenseList();
-            updateTopProfitPreview();
-            refreshCharts();
+            const data = db[dateStr] || { u: 0, a: 0, d: 0, t: 0, e_list: [] };
+            document.getElementById('in-uber').value = data.u || "";
+            document.getElementById('in-amap').value = data.a || "";
+            document.getElementById('in-didi').value = data.d || "";
+            document.getElementById('in-tada').value = data.t || "";
+            currentDayExpenses = data.e_list || [];
+            
+            renderExpenses();
+            updateUI();
         }
 
-        function addExpenseInline() {
-            const input = document.getElementById('new-exp-val');
-            const num = parseFloat(input.value);
-            if (!isNaN(num) && num > 0) {
-                currentDayExpenses.push(num);
-                input.value = "";
-                renderExpenseList();
-                updateTopProfitPreview();
-                input.blur();
-            }
-        }
-
-        function removeExpense(index) {
-            currentDayExpenses.splice(index, 1);
-            renderExpenseList();
-            updateTopProfitPreview();
-        }
-
-        function renderExpenseList() {
-            const listEl = document.getElementById('expense-list');
-            const totalEl = document.getElementById('display-total-exp');
-            if (currentDayExpenses.length === 0) {
-                listEl.innerHTML = `<p class="text-[10px] text-gray-700 italic py-2">該日無額外支出紀錄</p>`;
-                totalEl.innerText = "0";
-                return;
-            }
-            let html = '';
-            let total = 0;
-            currentDayExpenses.forEach((amt, idx) => {
-                total += amt;
-                html += `
-                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                        <span class="text-xs font-bold text-gray-500">項目 ${idx + 1}</span>
-                        <div class="flex items-center gap-3">
-                            <span class="font-black text-red-500">$${amt.toLocaleString()}</span>
-                            <button onclick="removeExpense(${idx})" class="w-8 h-8 flex items-center justify-center bg-red-500/10 text-red-500 rounded-full text-xs active-press">✕</button>
-                        </div>
-                    </div>
-                `;
-            });
-            listEl.innerHTML = html;
-            totalEl.innerText = total.toLocaleString();
-        }
-
-        function updateTopProfitPreview() {
+        function updateUI() {
             const u = parseFloat(document.getElementById('in-uber').value) || 0;
             const a = parseFloat(document.getElementById('in-amap').value) || 0;
             const d = parseFloat(document.getElementById('in-didi').value) || 0;
             const t = parseFloat(document.getElementById('in-tada').value) || 0;
-            const totalExp = currentDayExpenses.reduce((a, b) => a + b, 0);
-            const profit = (u + a + d + t) - totalExp;
-            document.getElementById('top-profit').innerText = `$${profit.toLocaleString()}`;
-        }
+            const totalE = currentDayExpenses.reduce((s, v) => s + v, 0);
+            const profit = (u + a + d + t) - totalE;
 
-        function save() {
-            db[selectedDate] = {
-                u: parseFloat(document.getElementById('in-uber').value) || 0,
-                a: parseFloat(document.getElementById('in-amap').value) || 0,
-                d: parseFloat(document.getElementById('in-didi').value) || 0,
-                t: parseFloat(document.getElementById('in-tada').value) || 0,
-                e_list: [...currentDayExpenses],
-                e_total: currentDayExpenses.reduce((a, b) => a + b, 0)
-            };
+            document.getElementById('top-profit').innerText = `$${Math.round(profit).toLocaleString()}`;
+            document.getElementById('display-total-exp').innerText = totalE.toLocaleString();
+
+            db[selectedDate] = { u, a, d, t, e_list: [...currentDayExpenses], e_total: totalE };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-            showToast("數據已安全儲存");
-            refreshCharts();
+
+            const ind = document.getElementById('autosave-indicator');
+            ind.style.opacity = "1";
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => ind.style.opacity = "0", 800);
+
+            refreshCharts(u, a, d, t, totalE);
         }
 
-        function refreshCharts() {
-            const week = getWeekKeys(selectedDate);
-            let weekSum = { u: 0, a: 0, d: 0, t: 0, e: 0 };
-            let dailyTotals = [];
-            let maxDayTotal = 0;
+        function addExpenseInline() {
+            const input = document.getElementById('new-exp-val');
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val > 0) {
+                currentDayExpenses.push(val);
+                input.value = "";
+                renderExpenses();
+                updateUI();
+            }
+        }
 
-            week.forEach(k => {
-                const dayData = db[k] || { u: 0, a: 0, d: 0, t: 0, e_total: 0 };
-                const dayTotal = dayData.u + dayData.a + dayData.d + dayData.t;
-                dailyTotals.push({ ...dayData, total: dayTotal, key: k });
-                if (dayTotal > maxDayTotal) maxDayTotal = dayTotal;
-                
-                weekSum.u += dayData.u; weekSum.a += dayData.a;
-                weekSum.d += dayData.d; weekSum.t += dayData.t;
-                weekSum.e += (dayData.e_total || 0);
-            });
+        function removeExpense(idx) {
+            currentDayExpenses.splice(idx, 1);
+            renderExpenses();
+            updateUI();
+        }
 
-            const chartContainer = document.getElementById('chart-container');
-            chartContainer.innerHTML = '';
-            dailyTotals.forEach(day => {
-                const bar = document.createElement('div');
-                bar.className = `flex-1 flex flex-col justify-end gap-0.5 relative ${day.key === selectedDate ? 'bg-blue-500/10 rounded-lg' : ''}`;
-                const getH = (val) => maxDayTotal > 0 ? (val / maxDayTotal * 100) : 0;
-                
-                bar.innerHTML = `
-                    <div class="w-full bg-green-500 bar-segment rounded-t-sm" style="height: ${getH(day.t)}%; background-color: #22c55e;"></div>
-                    <div class="w-full bg-yellow-500 bar-segment" style="height: ${getH(day.d)}%; background-color: #eab308;"></div>
-                    <div class="w-full bg-orange-500 bar-segment" style="height: ${getH(day.a)}%; background-color: #f97316;"></div>
-                    <div class="w-full bg-blue-500 bar-segment rounded-b-sm" style="height: ${getH(day.u)}%; background-color: #3b82f6;"></div>
-                `;
-                chartContainer.appendChild(bar);
-            });
-
-            const totalIn = weekSum.u + weekSum.a + weekSum.d + weekSum.t;
-            const net = totalIn - weekSum.e;
-            
-            document.getElementById('stats-content').innerHTML = `
-                <div class="bg-blue-500/5 p-4 rounded-3xl border border-blue-500/10 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-black text-blue-400 uppercase tracking-widest">本週統計概覽</span>
-                        <span class="text-[10px] text-gray-500">${week[0]} 至 ${week[6]}</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 pt-2">
-                        <div>
-                            <p class="text-[10px] text-gray-500 font-bold uppercase">總流水收入</p>
-                            <p class="text-xl font-black text-white">$${totalIn.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-red-500 font-bold uppercase">總營運支出</p>
-                            <p class="text-xl font-black text-red-500">-$${weekSum.e.toLocaleString()}</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-green-500 p-4 rounded-2xl flex justify-between items-center shadow-lg shadow-green-900/20">
-                        <span class="text-black font-black text-sm italic uppercase">本週純利收益</span>
-                        <span class="text-2xl font-black text-black">$${net.toLocaleString()}</span>
+        function renderExpenses() {
+            const el = document.getElementById('expense-list');
+            if (currentDayExpenses.length === 0) {
+                el.innerHTML = `<p class="text-gray-600 italic py-2">無支出</p>`;
+                return;
+            }
+            el.innerHTML = currentDayExpenses.map((v, i) => `
+                <div class="flex justify-between items-center bg-white/5 p-2 rounded-xl mb-1 border border-white/5">
+                    <span class="text-gray-500">項目 ${i+1}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-red-400">$${v}</span>
+                        <button onclick="removeExpense(${i})" class="text-red-500 px-2 font-black">✕</button>
                     </div>
                 </div>
+            `).join('');
+        }
+
+        function refreshCharts(currU, currA, currD, currT, currE) {
+            const week = getWeekKeys(selectedDate);
+            let totals = [];
+            let maxVal = 100;
+            let weekData = { in: 0, out: 0 };
+
+            week.forEach(k => {
+                let day = (k === selectedDate) ? { u: currU, a: currA, d: currD, t: currT, e_total: currE } : (db[k] || { u: 0, a: 0, d: 0, t: 0, e_total: 0 });
+                const sum = (day.u||0) + (day.a||0) + (day.d||0) + (day.t||0);
+                totals.push({ key: k, sum, ...day });
+                if (sum > maxVal) maxVal = sum;
+                weekData.in += sum;
+                weekData.out += (day.e_total || 0);
+            });
+
+            const container = document.getElementById('chart-container');
+            container.innerHTML = totals.map(day => {
+                const getH = (v) => v > 0 ? (v / maxVal * 100) : 0;
+                const isSel = day.key === selectedDate;
                 
-                <p class="text-[11px] text-center text-gray-600 font-medium px-4 leading-relaxed italic">
-                    💡 數據只儲存在此手機瀏覽器中，清除緩存會導致數據遺失。
-                </p>
+                const renderSegment = (val, colorClass) => {
+                    const h = getH(val);
+                    if (h <= 0) return '';
+                    const showText = h > 8; 
+                    return `
+                        <div class="w-full ${colorClass} bar-segment" style="height: ${h}%">
+                            ${showText ? `<span class="inner-label">${Math.round(val)}</span>` : ''}
+                        </div>
+                    `;
+                };
+
+                return `
+                    <div class="flex-1 flex flex-col justify-end gap-0.5 relative h-full ${isSel ? 'bg-white/5 rounded-t-lg' : ''}">
+                        <span class="bar-label-top ${isSel ? 'text-blue-400' : 'text-gray-500'}">${day.sum > 0 ? Math.round(day.sum) : ''}</span>
+                        ${renderSegment(day.t, 'bg-green-500 rounded-t-sm')}
+                        ${renderSegment(day.d, 'bg-yellow-500')}
+                        ${renderSegment(day.a, 'bg-orange-500')}
+                        ${renderSegment(day.u, 'bg-blue-500 rounded-b-sm')}
+                        ${isSel ? '<div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>' : ''}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('stats-content').innerHTML = `
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mt-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold text-gray-500 tracking-widest">本週純利</span>
+                        <span class="text-xl font-black text-green-500">$${(weekData.in - weekData.out).toLocaleString()}</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-600 font-bold">
+                        <span>總流水: $${weekData.in.toLocaleString()}</span>
+                        <span>總支出: $${weekData.out.toLocaleString()}</span>
+                    </div>
+                </div>
             `;
         }
 
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            t.innerText = m; t.style.opacity = "1"; t.style.transform = "translate(-50%, -20px)";
-            setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translate(-50%, 0)"; }, 2500);
-        }
-
         function clearAll() {
-            if(confirm("確定要清空所有紀錄嗎？此操作不可撤回。")) {
+            if (confirm("確定清空所有數據？")) {
                 localStorage.removeItem(STORAGE_KEY);
-                db = {}; currentDayExpenses = [];
-                loadDateData(selectedDate);
+                db = {}; loadDateData(selectedDate);
             }
         }
 
         document.getElementById('date-input').addEventListener('change', (e) => loadDateData(e.target.value));
         ['in-uber', 'in-amap', 'in-didi', 'in-tada'].forEach(id => {
-            document.getElementById(id).addEventListener('input', updateTopProfitPreview);
+            document.getElementById(id).addEventListener('input', updateUI);
         });
 
         window.onload = () => {
@@ -382,3 +382,4 @@
     </script>
 </body>
 </html>
+
