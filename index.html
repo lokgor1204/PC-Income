@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (自動跨日版)</title>
+    <title>司機收入助手 (持久數據版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -111,26 +111,29 @@
             <div class="relative">
                 <h1 class="text-3xl font-black tracking-tight text-white flex items-center gap-2">
                     收入助手
-                    <span id="autosave-indicator">● 已同步</span>
+                    <span id="autosave-indicator">● 已備份</span>
                 </h1>
                 <div class="relative inline-block mt-1">
-                    <p id="display-date-text" class="text-blue-500 font-bold flex items-center gap-1 underline decoration-dotted underline-offset-4">
+                    <p id="display-date-text" class="text-blue-500 font-bold flex items-center gap-1 underline decoration-dotted underline-offset-4 cursor-pointer">
                         載入中... 📅
                     </p>
                     <input type="date" id="date-input">
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-[10px] text-gray-600 block uppercase font-bold tracking-widest">當日盈利</span>
+                <span class="text-[10px] text-gray-600 block uppercase font-bold tracking-widest">當日純利</span>
                 <span id="top-profit" class="text-xl font-bold text-green-500">$0</span>
             </div>
         </header>
 
         <!-- 數據輸入 -->
         <section class="glass-card rounded-3xl p-5 shadow-2xl">
-            <h2 class="text-sm font-bold text-gray-400 mb-4 flex items-center">
-                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> 平台流水
-            </h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-bold text-gray-400 flex items-center">
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> 平台收入流水
+                </h2>
+                <span id="day-in-sum" class="text-[10px] text-gray-500 font-bold bg-white/5 px-2 py-0.5 rounded">總入: $0</span>
+            </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <span class="platform-tag text-blue-400">UBER</span>
@@ -152,7 +155,7 @@
 
             <div class="mt-6 border-t border-white/5 pt-6">
                 <h2 class="text-sm font-bold text-gray-400 mb-4 flex items-center">
-                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span> 支出明細
+                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span> 支出紀錄
                 </h2>
                 
                 <div class="flex gap-2 mb-4">
@@ -163,17 +166,17 @@
                 <div id="expense-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1 text-xs text-gray-400"></div>
 
                 <div class="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
-                    <span class="text-red-400 font-bold text-xs uppercase tracking-tighter">當日支出總計</span>
+                    <span class="text-red-400 font-bold text-xs uppercase tracking-tighter">當日總支出</span>
                     <span class="text-lg font-black text-red-500">$<span id="display-total-exp">0</span></span>
                 </div>
             </div>
         </section>
 
-        <!-- 圖表與分析 -->
+        <!-- 圖表分析 -->
         <section class="glass-card rounded-3xl p-5 shadow-xl">
             <div class="flex justify-between items-center mb-1">
-                <h2 class="font-bold text-lg text-white">本週趨勢</h2>
-                <button onclick="clearAll()" class="text-[9px] text-gray-600 border border-gray-800 px-2 py-1 rounded-lg">清空數據</button>
+                <h2 class="font-bold text-lg text-white">本週統計分析</h2>
+                <button onclick="clearAll()" class="text-[9px] text-gray-600 border border-gray-800 px-2 py-1 rounded-lg">清空紀錄</button>
             </div>
 
             <div>
@@ -182,7 +185,6 @@
                     <span class="flex-1">一</span><span class="flex-1">二</span><span class="flex-1">三</span><span class="flex-1">四</span><span class="flex-1">五</span><span class="flex-1">六</span><span class="flex-1">日</span>
                 </div>
 
-                <!-- 顏色標記 -->
                 <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 py-3 border-t border-white/5">
                     <div class="flex items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest"><span class="legend-dot bg-blue-500"></span> Uber</div>
                     <div class="flex items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest"><span class="legend-dot bg-orange-500"></span> 高德</div>
@@ -196,23 +198,51 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'driver_income_v9_auto_rollover';
-        let db = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        // 固定 STORAGE_KEY，確保更新代碼後數據仍能訪問
+        const MASTER_KEY = 'DRIVER_INCOME_MASTER_DATA';
+        const OLD_KEYS = ['driver_income_v9_auto_rollover', 'driver_income_v8_auto'];
+        
+        let db = {};
         let currentDayExpenses = [];
         let selectedDate = "";
         let saveTimer;
 
-        // 核心功能：獲取今天日期 (YYYY-MM-DD)
-        function getTodayStr() {
-            return new Date().toISOString().split('T')[0];
+        // 1. 初始化數據：嘗試從新舊 Key 中恢復數據
+        function initData() {
+            // 先嘗試讀取主數據
+            const masterData = localStorage.getItem(MASTER_KEY);
+            if (masterData) {
+                db = JSON.parse(masterData);
+                console.log("已從主儲存讀取數據");
+            } else {
+                // 如果是第一次使用主 Key，嘗試從舊 Key 遷移數據
+                OLD_KEYS.forEach(oldKey => {
+                    const oldData = localStorage.getItem(oldKey);
+                    if (oldData) {
+                        const parsed = JSON.parse(oldData);
+                        db = { ...db, ...parsed }; // 合併舊數據
+                        console.log(`已成功從舊版本 ${oldKey} 遷移數據`);
+                    }
+                });
+                saveToDisk(); // 立即儲存到主 Key
+            }
         }
 
-        // 自動檢測午夜更新
+        function saveToDisk() {
+            localStorage.setItem(MASTER_KEY, JSON.stringify(db));
+        }
+
+        function getTodayStr() {
+            // 修正時區偏移，獲取本地日期
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            return new Date(now - offset).toISOString().split('T')[0];
+        }
+
         function checkDateRollover() {
             const today = getTodayStr();
-            // 如果目前選取的日期就是今天，且系統日期變了，就自動切換
             if (selectedDate !== today) {
-                console.log("偵測到日期變更，自動更新至: " + today);
+                console.log("午夜已過，自動更新日期");
                 loadDateData(today);
             }
         }
@@ -254,19 +284,22 @@
             const d = parseFloat(document.getElementById('in-didi').value) || 0;
             const t = parseFloat(document.getElementById('in-tada').value) || 0;
             const totalE = currentDayExpenses.reduce((s, v) => s + v, 0);
-            const profit = (u + a + d + t) - totalE;
+            const totalIn = u + a + d + t;
+            const profit = totalIn - totalE;
 
             document.getElementById('top-profit').innerText = `$${Math.round(profit).toLocaleString()}`;
             document.getElementById('display-total-exp').innerText = totalE.toLocaleString();
+            document.getElementById('day-in-sum').innerText = `總入: $${totalIn.toLocaleString()}`;
 
-            // 自動儲存至資料庫
+            // 更新數據庫
             db[selectedDate] = { u, a, d, t, e_list: [...currentDayExpenses], e_total: totalE };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            saveToDisk();
 
+            // 備份指示器
             const ind = document.getElementById('autosave-indicator');
             ind.style.opacity = "1";
             clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => ind.style.opacity = "0", 800);
+            saveTimer = setTimeout(() => ind.style.opacity = "0", 1200);
 
             refreshCharts(u, a, d, t, totalE);
         }
@@ -291,7 +324,7 @@
         function renderExpenses() {
             const el = document.getElementById('expense-list');
             if (currentDayExpenses.length === 0) {
-                el.innerHTML = `<p class="text-gray-600 italic py-2">本日無支出紀錄</p>`;
+                el.innerHTML = `<p class="text-gray-600 italic py-2">本日無支出項目</p>`;
                 return;
             }
             el.innerHTML = currentDayExpenses.map((v, i) => `
@@ -299,7 +332,7 @@
                     <span class="text-gray-500">項目 ${i+1}</span>
                     <div class="flex items-center gap-2">
                         <span class="font-bold text-red-400">$${v}</span>
-                        <button onclick="removeExpense(${i})" class="text-red-500 px-2 font-black">✕</button>
+                        <button onclick="removeExpense(${i})" class="text-red-500 px-2 font-black active-press">✕</button>
                     </div>
                 </div>
             `).join('');
@@ -332,7 +365,7 @@
                 };
 
                 return `
-                    <div class="flex-1 flex flex-col justify-end gap-0.5 relative h-full ${isSel ? 'bg-white/5 rounded-t-lg' : ''}">
+                    <div class="flex-1 flex flex-col justify-end gap-0.5 relative h-full ${isSel ? 'bg-white/10 rounded-t-lg' : ''}">
                         <span class="bar-label-top ${isSel ? 'text-blue-400 font-black' : 'text-gray-600'}">${day.sum > 0 ? Math.round(day.sum) : ''}</span>
                         ${renderSegment(day.t, 'bg-green-500 rounded-t-sm')}
                         ${renderSegment(day.d, 'bg-yellow-500')}
@@ -346,7 +379,7 @@
             document.getElementById('stats-content').innerHTML = `
                 <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mt-2">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs font-bold text-gray-500 tracking-widest uppercase">本週預估純利</span>
+                        <span class="text-xs font-bold text-gray-500 tracking-widest uppercase">本週累計純利</span>
                         <span class="text-xl font-black text-green-500">$${(weekData.in - weekData.out).toLocaleString()}</span>
                     </div>
                     <div class="flex justify-between text-[9px] text-gray-600 font-bold uppercase">
@@ -358,30 +391,30 @@
         }
 
         function clearAll() {
-            if (confirm("確定清空所有數據紀錄？")) {
-                localStorage.removeItem(STORAGE_KEY);
-                db = {}; loadDateData(selectedDate);
+            if (confirm("這將刪除所有歷史數據紀錄，確定嗎？")) {
+                db = {};
+                saveToDisk();
+                loadDateData(selectedDate);
             }
         }
 
-        // 監聽輸入
+        // 事件監聽
         document.getElementById('date-input').addEventListener('change', (e) => loadDateData(e.target.value));
         ['in-uber', 'in-amap', 'in-didi', 'in-tada'].forEach(id => {
             document.getElementById(id).addEventListener('input', updateUI);
         });
 
-        // 初始化
+        // 啟動
         window.onload = () => {
+            initData();
             loadDateData(getTodayStr());
             
-            // 每 60 秒檢查一次是否需要換天
+            // 每分鐘檢查跨日
             setInterval(checkDateRollover, 60000);
             
-            // 監聽網頁從後台回到前台 (例如早上打開手機瀏覽器)
+            // 重新進入網頁檢查
             document.addEventListener("visibilitychange", () => {
-                if (document.visibilityState === 'visible') {
-                    checkDateRollover();
-                }
+                if (document.visibilityState === 'visible') checkDateRollover();
             });
         };
     </script>
