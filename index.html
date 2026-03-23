@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (簡潔支出版)</title>
+    <title>司機收入助手 (總流水強化版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -132,9 +132,9 @@
                 <h2 class="text-sm font-bold text-gray-400 flex items-center">
                     <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> 平台收入流水
                 </h2>
-                <span id="day-in-sum" class="text-[10px] text-gray-500 font-bold bg-white/5 px-2 py-0.5 rounded">總入: $0</span>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <span class="platform-tag text-blue-400">UBER</span>
                     <input type="number" id="in-uber" inputmode="decimal" placeholder="0" class="w-full rounded-2xl py-3 px-4 text-lg font-bold">
@@ -153,7 +153,13 @@
                 </div>
             </div>
 
-            <div class="mt-6 border-t border-white/5 pt-6">
+            <!-- 當日總流水格 -->
+            <div class="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 mb-6">
+                <span class="text-blue-400 font-bold text-xs uppercase tracking-tighter">當日總流水</span>
+                <span class="text-lg font-black text-blue-500">$<span id="display-total-revenue">0</span></span>
+            </div>
+
+            <div class="mt-2 border-t border-white/5 pt-6">
                 <h2 class="text-sm font-bold text-gray-400 mb-4 flex items-center">
                     <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span> 支出紀錄
                 </h2>
@@ -283,8 +289,8 @@
             const profit = totalIn - totalE;
 
             document.getElementById('top-profit').innerText = `$${Math.round(profit).toLocaleString()}`;
+            document.getElementById('display-total-revenue').innerText = totalIn.toLocaleString();
             document.getElementById('display-total-exp').innerText = totalE.toLocaleString();
-            document.getElementById('day-in-sum').innerText = `總入: $${totalIn.toLocaleString()}`;
 
             db[selectedDate] = { u, a, d, t, e_list: [...currentDayExpenses], e_total: totalE };
             saveToDisk();
