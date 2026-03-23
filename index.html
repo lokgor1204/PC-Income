@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (完整圖例版)</title>
+    <title>司機收入助手 (自動跨日版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -72,15 +72,12 @@
             font-weight: 900;
             color: rgba(0, 0, 0, 0.6);
             white-space: nowrap;
-            pointer-events: none;
         }
         #date-input {
             position: absolute;
             opacity: 0;
             width: 100%;
-            left: 0;
-            top: 0;
-            height: 100%;
+            left: 0; top: 0; height: 100%;
             cursor: pointer;
         }
         #autosave-indicator {
@@ -97,7 +94,6 @@
             font-size: 10px;
             font-weight: 900;
             color: #ffffff;
-            white-space: nowrap;
         }
         .legend-dot {
             width: 6px;
@@ -130,10 +126,10 @@
             </div>
         </header>
 
-        <!-- 數據輸入框 -->
+        <!-- 數據輸入 -->
         <section class="glass-card rounded-3xl p-5 shadow-2xl">
             <h2 class="text-sm font-bold text-gray-400 mb-4 flex items-center">
-                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> 平台流水 (即時更新)
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> 平台流水
             </h2>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -161,21 +157,19 @@
                 
                 <div class="flex gap-2 mb-4">
                     <input type="number" id="new-exp-val" inputmode="decimal" placeholder="金額" class="flex-1 rounded-xl py-2 px-4 text-sm font-bold">
-                    <button onclick="addExpenseInline()" class="bg-red-500 text-white px-5 rounded-xl font-bold active-press text-sm whitespace-nowrap">
-                        新增
-                    </button>
+                    <button onclick="addExpenseInline()" class="bg-red-500 text-white px-5 rounded-xl font-bold active-press text-sm whitespace-nowrap">新增</button>
                 </div>
                 
-                <div id="expense-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1 text-xs"></div>
+                <div id="expense-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1 text-xs text-gray-400"></div>
 
                 <div class="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
-                    <span class="text-red-400 font-bold text-xs uppercase tracking-tighter">當日支出</span>
+                    <span class="text-red-400 font-bold text-xs uppercase tracking-tighter">當日支出總計</span>
                     <span class="text-lg font-black text-red-500">$<span id="display-total-exp">0</span></span>
                 </div>
             </div>
         </section>
 
-        <!-- 圖表分析 -->
+        <!-- 圖表與分析 -->
         <section class="glass-card rounded-3xl p-5 shadow-xl">
             <div class="flex justify-between items-center mb-1">
                 <h2 class="font-bold text-lg text-white">本週趨勢</h2>
@@ -183,28 +177,17 @@
             </div>
 
             <div>
-                <!-- 圖表主體 -->
                 <div id="chart-container" class="bar-container border-b border-white/10"></div>
-                
-                <!-- 星期標記 -->
-                <div class="flex justify-between mt-2 mb-4 text-[10px] text-gray-500 font-bold text-center">
+                <div class="flex justify-between mt-2 mb-4 text-[10px] text-gray-500 font-bold text-center uppercase">
                     <span class="flex-1">一</span><span class="flex-1">二</span><span class="flex-1">三</span><span class="flex-1">四</span><span class="flex-1">五</span><span class="flex-1">六</span><span class="flex-1">日</span>
                 </div>
 
-                <!-- 圖例 Legend -->
+                <!-- 顏色標記 -->
                 <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 py-3 border-t border-white/5">
-                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                        <span class="legend-dot bg-blue-500"></span> Uber
-                    </div>
-                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                        <span class="legend-dot bg-orange-500"></span> 高德
-                    </div>
-                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                        <span class="legend-dot bg-yellow-500"></span> 滴滴
-                    </div>
-                    <div class="flex items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                        <span class="legend-dot bg-green-500"></span> Tada
-                    </div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest"><span class="legend-dot bg-blue-500"></span> Uber</div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest"><span class="legend-dot bg-orange-500"></span> 高德</div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest"><span class="legend-dot bg-yellow-500"></span> 滴滴</div>
+                    <div class="flex items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest"><span class="legend-dot bg-green-500"></span> Tada</div>
                 </div>
             </div>
             
@@ -213,11 +196,26 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'driver_income_v8_auto';
+        const STORAGE_KEY = 'driver_income_v9_auto_rollover';
         let db = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         let currentDayExpenses = [];
-        let selectedDate = new Date().toISOString().split('T')[0];
+        let selectedDate = "";
         let saveTimer;
+
+        // 核心功能：獲取今天日期 (YYYY-MM-DD)
+        function getTodayStr() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // 自動檢測午夜更新
+        function checkDateRollover() {
+            const today = getTodayStr();
+            // 如果目前選取的日期就是今天，且系統日期變了，就自動切換
+            if (selectedDate !== today) {
+                console.log("偵測到日期變更，自動更新至: " + today);
+                loadDateData(today);
+            }
+        }
 
         function getWeekKeys(base) {
             const now = new Date(base);
@@ -235,6 +233,7 @@
 
         function loadDateData(dateStr) {
             selectedDate = dateStr;
+            document.getElementById('date-input').value = dateStr;
             const d = new Date(dateStr);
             document.getElementById('display-date-text').innerText = d.toLocaleDateString('zh-HK', { month: 'long', day: 'numeric', weekday: 'short' }) + " 📅";
             
@@ -260,6 +259,7 @@
             document.getElementById('top-profit').innerText = `$${Math.round(profit).toLocaleString()}`;
             document.getElementById('display-total-exp').innerText = totalE.toLocaleString();
 
+            // 自動儲存至資料庫
             db[selectedDate] = { u, a, d, t, e_list: [...currentDayExpenses], e_total: totalE };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 
@@ -291,7 +291,7 @@
         function renderExpenses() {
             const el = document.getElementById('expense-list');
             if (currentDayExpenses.length === 0) {
-                el.innerHTML = `<p class="text-gray-600 italic py-2">無支出</p>`;
+                el.innerHTML = `<p class="text-gray-600 italic py-2">本日無支出紀錄</p>`;
                 return;
             }
             el.innerHTML = currentDayExpenses.map((v, i) => `
@@ -328,17 +328,12 @@
                 const renderSegment = (val, colorClass) => {
                     const h = getH(val);
                     if (h <= 0) return '';
-                    const showText = h > 8; 
-                    return `
-                        <div class="w-full ${colorClass} bar-segment" style="height: ${h}%">
-                            ${showText ? `<span class="inner-label">${Math.round(val)}</span>` : ''}
-                        </div>
-                    `;
+                    return `<div class="w-full ${colorClass} bar-segment" style="height: ${h}%">${h > 8 ? `<span class="inner-label">${Math.round(val)}</span>` : ''}</div>`;
                 };
 
                 return `
                     <div class="flex-1 flex flex-col justify-end gap-0.5 relative h-full ${isSel ? 'bg-white/5 rounded-t-lg' : ''}">
-                        <span class="bar-label-top ${isSel ? 'text-blue-400' : 'text-gray-500'}">${day.sum > 0 ? Math.round(day.sum) : ''}</span>
+                        <span class="bar-label-top ${isSel ? 'text-blue-400 font-black' : 'text-gray-600'}">${day.sum > 0 ? Math.round(day.sum) : ''}</span>
                         ${renderSegment(day.t, 'bg-green-500 rounded-t-sm')}
                         ${renderSegment(day.d, 'bg-yellow-500')}
                         ${renderSegment(day.a, 'bg-orange-500')}
@@ -351,10 +346,10 @@
             document.getElementById('stats-content').innerHTML = `
                 <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mt-2">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs font-bold text-gray-500 tracking-widest">本週純利</span>
+                        <span class="text-xs font-bold text-gray-500 tracking-widest uppercase">本週預估純利</span>
                         <span class="text-xl font-black text-green-500">$${(weekData.in - weekData.out).toLocaleString()}</span>
                     </div>
-                    <div class="flex justify-between text-[10px] text-gray-600 font-bold">
+                    <div class="flex justify-between text-[9px] text-gray-600 font-bold uppercase">
                         <span>總流水: $${weekData.in.toLocaleString()}</span>
                         <span>總支出: $${weekData.out.toLocaleString()}</span>
                     </div>
@@ -363,21 +358,31 @@
         }
 
         function clearAll() {
-            if (confirm("確定清空所有數據？")) {
+            if (confirm("確定清空所有數據紀錄？")) {
                 localStorage.removeItem(STORAGE_KEY);
                 db = {}; loadDateData(selectedDate);
             }
         }
 
+        // 監聽輸入
         document.getElementById('date-input').addEventListener('change', (e) => loadDateData(e.target.value));
         ['in-uber', 'in-amap', 'in-didi', 'in-tada'].forEach(id => {
             document.getElementById(id).addEventListener('input', updateUI);
         });
 
+        // 初始化
         window.onload = () => {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date-input').value = today;
-            loadDateData(today);
+            loadDateData(getTodayStr());
+            
+            // 每 60 秒檢查一次是否需要換天
+            setInterval(checkDateRollover, 60000);
+            
+            // 監聽網頁從後台回到前台 (例如早上打開手機瀏覽器)
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === 'visible') {
+                    checkDateRollover();
+                }
+            });
         };
     </script>
 </body>
