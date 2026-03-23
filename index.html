@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (持久數據版)</title>
+    <title>司機收入助手 (簡潔支出版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -25,14 +25,14 @@
             padding-top: calc(var(--safe-top) + 20px);
             padding-bottom: calc(var(--safe-bottom) + 40px);
         }
-        input {
+        input, select {
             background: #1c1c1e !important;
             border: 1px solid #2c2c2e !important;
             color: white !important;
             -webkit-appearance: none;
             min-width: 0;
         }
-        input:focus {
+        input:focus, select:focus {
             border-color: #0a84ff !important;
             outline: none;
         }
@@ -110,8 +110,8 @@
         <header class="flex justify-between items-end mb-2">
             <div class="relative">
                 <h1 class="text-3xl font-black tracking-tight text-white flex items-center gap-2">
-                    收入助手
-                    <span id="autosave-indicator">● 已備份</span>
+                    司機收入助手
+                    <span id="autosave-indicator">● 已儲存</span>
                 </h1>
                 <div class="relative inline-block mt-1">
                     <p id="display-date-text" class="text-blue-500 font-bold flex items-center gap-1 underline decoration-dotted underline-offset-4 cursor-pointer">
@@ -158,12 +158,21 @@
                     <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span> 支出紀錄
                 </h2>
                 
-                <div class="flex gap-2 mb-4">
-                    <input type="number" id="new-exp-val" inputmode="decimal" placeholder="金額" class="flex-1 rounded-xl py-2 px-4 text-sm font-bold">
-                    <button onclick="addExpenseInline()" class="bg-red-500 text-white px-5 rounded-xl font-bold active-press text-sm whitespace-nowrap">新增</button>
+                <div class="flex flex-col gap-2 mb-4">
+                    <div class="flex gap-2">
+                        <select id="new-exp-cat" class="w-1/3 rounded-xl py-2 px-2 text-xs font-bold bg-[#1c1c1e]">
+                            <option value="隧道">隧道</option>
+                            <option value="電費/油費">電費/油費</option>
+                            <option value="供車">供車</option>
+                            <option value="抄牌">抄牌</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <input type="number" id="new-exp-val" inputmode="decimal" placeholder="金額" class="flex-1 rounded-xl py-2 px-4 text-sm font-bold">
+                        <button onclick="addExpenseInline()" class="bg-red-500 text-white px-4 rounded-xl font-bold active-press text-sm whitespace-nowrap">新增</button>
+                    </div>
                 </div>
                 
-                <div id="expense-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1 text-xs text-gray-400"></div>
+                <div id="expense-list" class="space-y-2 mb-4 max-h-48 overflow-y-auto pr-1 text-xs text-gray-400"></div>
 
                 <div class="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
                     <span class="text-red-400 font-bold text-xs uppercase tracking-tighter">當日總支出</span>
@@ -198,33 +207,17 @@
     </div>
 
     <script>
-        // 固定 STORAGE_KEY，確保更新代碼後數據仍能訪問
         const MASTER_KEY = 'DRIVER_INCOME_MASTER_DATA';
-        const OLD_KEYS = ['driver_income_v9_auto_rollover', 'driver_income_v8_auto'];
         
         let db = {};
         let currentDayExpenses = [];
         let selectedDate = "";
         let saveTimer;
 
-        // 1. 初始化數據：嘗試從新舊 Key 中恢復數據
         function initData() {
-            // 先嘗試讀取主數據
             const masterData = localStorage.getItem(MASTER_KEY);
             if (masterData) {
                 db = JSON.parse(masterData);
-                console.log("已從主儲存讀取數據");
-            } else {
-                // 如果是第一次使用主 Key，嘗試從舊 Key 遷移數據
-                OLD_KEYS.forEach(oldKey => {
-                    const oldData = localStorage.getItem(oldKey);
-                    if (oldData) {
-                        const parsed = JSON.parse(oldData);
-                        db = { ...db, ...parsed }; // 合併舊數據
-                        console.log(`已成功從舊版本 ${oldKey} 遷移數據`);
-                    }
-                });
-                saveToDisk(); // 立即儲存到主 Key
             }
         }
 
@@ -233,7 +226,6 @@
         }
 
         function getTodayStr() {
-            // 修正時區偏移，獲取本地日期
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
             return new Date(now - offset).toISOString().split('T')[0];
@@ -242,7 +234,6 @@
         function checkDateRollover() {
             const today = getTodayStr();
             if (selectedDate !== today) {
-                console.log("午夜已過，自動更新日期");
                 loadDateData(today);
             }
         }
@@ -272,7 +263,10 @@
             document.getElementById('in-amap').value = data.a || "";
             document.getElementById('in-didi').value = data.d || "";
             document.getElementById('in-tada').value = data.t || "";
-            currentDayExpenses = data.e_list || [];
+            
+            currentDayExpenses = (data.e_list || []).map(item => {
+                return typeof item === 'number' ? { cat: '支出', val: item } : item;
+            });
             
             renderExpenses();
             updateUI();
@@ -283,7 +277,8 @@
             const a = parseFloat(document.getElementById('in-amap').value) || 0;
             const d = parseFloat(document.getElementById('in-didi').value) || 0;
             const t = parseFloat(document.getElementById('in-tada').value) || 0;
-            const totalE = currentDayExpenses.reduce((s, v) => s + v, 0);
+            
+            const totalE = currentDayExpenses.reduce((s, v) => s + v.val, 0);
             const totalIn = u + a + d + t;
             const profit = totalIn - totalE;
 
@@ -291,11 +286,9 @@
             document.getElementById('display-total-exp').innerText = totalE.toLocaleString();
             document.getElementById('day-in-sum').innerText = `總入: $${totalIn.toLocaleString()}`;
 
-            // 更新數據庫
             db[selectedDate] = { u, a, d, t, e_list: [...currentDayExpenses], e_total: totalE };
             saveToDisk();
 
-            // 備份指示器
             const ind = document.getElementById('autosave-indicator');
             ind.style.opacity = "1";
             clearTimeout(saveTimer);
@@ -306,9 +299,12 @@
 
         function addExpenseInline() {
             const input = document.getElementById('new-exp-val');
+            const catSelect = document.getElementById('new-exp-cat');
             const val = parseFloat(input.value);
+            const cat = catSelect.value;
+            
             if (!isNaN(val) && val > 0) {
-                currentDayExpenses.push(val);
+                currentDayExpenses.push({ cat, val });
                 input.value = "";
                 renderExpenses();
                 updateUI();
@@ -327,13 +323,13 @@
                 el.innerHTML = `<p class="text-gray-600 italic py-2">本日無支出項目</p>`;
                 return;
             }
-            el.innerHTML = currentDayExpenses.map((v, i) => `
-                <div class="flex justify-between items-center bg-white/5 p-2 rounded-xl mb-1 border border-white/5">
-                    <span class="text-gray-500">項目 ${i+1}</span>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-red-400">$${v}</span>
-                        <button onclick="removeExpense(${i})" class="text-red-500 px-2 font-black active-press">✕</button>
+            el.innerHTML = currentDayExpenses.map((item, i) => `
+                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl mb-1 border border-white/5">
+                    <div class="flex items-center gap-3">
+                        <span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider">${item.cat}</span>
+                        <span class="font-bold text-sm text-gray-200">$${item.val.toLocaleString()}</span>
                     </div>
+                    <button onclick="removeExpense(${i})" class="text-gray-600 px-2 font-black active-press hover:text-red-500 transition-colors">✕</button>
                 </div>
             `).join('');
         }
@@ -398,21 +394,15 @@
             }
         }
 
-        // 事件監聽
         document.getElementById('date-input').addEventListener('change', (e) => loadDateData(e.target.value));
         ['in-uber', 'in-amap', 'in-didi', 'in-tada'].forEach(id => {
             document.getElementById(id).addEventListener('input', updateUI);
         });
 
-        // 啟動
         window.onload = () => {
             initData();
             loadDateData(getTodayStr());
-            
-            // 每分鐘檢查跨日
             setInterval(checkDateRollover, 60000);
-            
-            // 重新進入網頁檢查
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === 'visible') checkDateRollover();
             });
