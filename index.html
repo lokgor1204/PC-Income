@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (全對稱版)</title>
+    <title>司機收入助手 (色彩鮮明版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -130,30 +130,33 @@
             </div>
             
             <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                <!-- UBER (藍色) -->
                 <div>
-                    <span class="platform-tag text-blue-400">UBER</span>
-                    <input type="number" id="in-uber" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold">
+                    <span class="platform-tag text-blue-500">UBER</span>
+                    <input type="number" id="in-uber" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold border-blue-500/20">
                 </div>
+                <!-- AMAP (橙色) -->
                 <div>
-                    <span class="platform-tag text-orange-400">高德 (AMAP)</span>
-                    <input type="number" id="in-amap" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold">
+                    <span class="platform-tag text-orange-500">高德 (AMAP)</span>
+                    <input type="number" id="in-amap" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold border-orange-500/20">
                 </div>
+                <!-- DIDI (黃色) -->
                 <div>
                     <span class="platform-tag text-yellow-400">滴滴 (DIDI)</span>
-                    <input type="number" id="in-didi" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold">
+                    <input type="number" id="in-didi" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold border-yellow-400/20">
                 </div>
+                <!-- TADA (綠色) -->
                 <div>
-                    <span class="platform-tag text-green-400">TADA</span>
-                    <input type="number" id="in-tada" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold">
+                    <span class="platform-tag text-green-500">TADA</span>
+                    <input type="number" id="in-tada" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold border-green-500/20">
                 </div>
                 
-                <!-- 其他收入 -->
-                <div>
-                    <span class="platform-tag text-blue-300/60 uppercase">其他</span>
+                <!-- 其他收入 (改為紫色，與UBER區分) -->
+                <div class="col-span-2 mt-2">
+                    <span class="platform-tag text-purple-400 uppercase">其他收入</span>
                     <div class="relative flex">
-                        <input type="number" id="new-inc-val" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 pl-3 pr-10 text-lg font-bold">
-                        <!-- 收入新增 [+] -->
-                        <button onclick="addItem('income')" class="absolute right-1 top-1 bottom-1 bg-blue-600 hover:bg-blue-500 text-white w-8 rounded-lg font-black active-press text-lg">＋</button>
+                        <input type="number" id="new-inc-val" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 pl-3 pr-12 text-lg font-bold border-purple-500/30">
+                        <button onclick="addItem('income')" class="absolute right-1 top-1 bottom-1 bg-purple-600 hover:bg-purple-500 text-white w-10 rounded-lg font-black active-press text-lg">＋</button>
                     </div>
                 </div>
             </div>
@@ -183,9 +186,8 @@
                             <option value="其他">其他</option>
                         </select>
                         <div class="relative flex flex-1">
-                            <input type="number" id="new-exp-val" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-2 pl-3 pr-10 text-sm font-bold">
-                            <!-- 支出新增 [+] -->
-                            <button onclick="addItem('expense')" class="absolute right-1 top-1 bottom-1 bg-red-600 hover:bg-red-500 text-white w-8 rounded-lg font-black active-press text-lg">＋</button>
+                            <input type="number" id="new-exp-val" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-2 pl-3 pr-12 text-sm font-bold border-red-500/30">
+                            <button onclick="addItem('expense')" class="absolute right-1 top-1 bottom-1 bg-red-600 hover:bg-red-500 text-white w-10 rounded-lg font-black active-press text-lg">＋</button>
                         </div>
                     </div>
                 </div>
@@ -312,7 +314,7 @@
         function renderList(type) {
             const list = type === 'income' ? currentDayOtherIncome : currentDayExpenses;
             const el = document.getElementById(type === 'income' ? 'income-list' : 'expense-list');
-            const colorClass = type === 'income' ? 'blue' : 'red';
+            const colorClass = type === 'income' ? 'purple' : 'red';
             
             if (list.length === 0) {
                 el.innerHTML = type === 'income' ? '' : `<p class="text-gray-600 italic py-1 text-[10px]">無支出紀錄</p>`;
