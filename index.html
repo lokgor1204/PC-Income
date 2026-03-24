@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (色彩鮮明版)</title>
+    <title>司機收入助手 (防遺失數據版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -151,7 +151,7 @@
                     <input type="number" id="in-tada" inputmode="decimal" placeholder="0" class="w-full rounded-xl py-3 px-3 text-lg font-bold border-green-500/20">
                 </div>
                 
-                <!-- 其他收入 (改為紫色，與UBER區分) -->
+                <!-- 其他收入 (紫色) -->
                 <div class="col-span-2 mt-2">
                     <span class="platform-tag text-purple-400 uppercase">其他收入</span>
                     <div class="relative flex">
@@ -161,10 +161,10 @@
                 </div>
             </div>
 
-            <!-- 其他收入列表展示 -->
+            <!-- 其他收入列表 -->
             <div id="income-list" class="mt-3 space-y-1 max-h-24 overflow-y-auto pr-1"></div>
 
-            <!-- 當日總流水格 -->
+            <!-- 總流水 -->
             <div class="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 mt-6 mb-6">
                 <span class="text-blue-400 font-bold text-xs uppercase tracking-tighter">當日總流水</span>
                 <span class="text-lg font-black text-blue-500">$<span id="display-total-revenue">0</span></span>
@@ -218,7 +218,17 @@
     </div>
 
     <script>
+        // 設定目前的存儲 Key
         const MASTER_KEY = 'DRIVER_APP_V8_STORAGE';
+        // 可能存在舊數據的 Key 列表
+        const OLD_KEYS = [
+            'DRIVER_APP_V7_STORAGE',
+            'DRIVER_APP_V6_STORAGE',
+            'DRIVER_APP_V5_STORAGE',
+            'DRIVER_APP_V4_STORAGE',
+            'driver_records',
+            'ridehail_tracker_v2'
+        ];
         
         let db = {};
         let currentDayExpenses = [];
@@ -227,8 +237,29 @@
         let saveTimer;
 
         function initData() {
+            // 1. 嘗試讀取當前版本的數據
             const masterData = localStorage.getItem(MASTER_KEY);
-            if (masterData) db = JSON.parse(masterData);
+            if (masterData) {
+                db = JSON.parse(masterData);
+            } else {
+                // 2. 如果當前版本沒數據，嘗試自動遷移舊數據
+                console.log("Checking for old data...");
+                for (const oldKey of OLD_KEYS) {
+                    const oldData = localStorage.getItem(oldKey);
+                    if (oldData) {
+                        try {
+                            const parsed = JSON.parse(oldData);
+                            // 簡單合併或覆蓋
+                            db = Object.assign(db, parsed);
+                            console.log(`Migrated data from ${oldKey}`);
+                        } catch (e) {
+                            console.error(`Failed to parse ${oldKey}`);
+                        }
+                    }
+                }
+                // 遷移後立即存儲到新 Key，避免下次再遷移
+                saveToDisk();
+            }
         }
 
         function saveToDisk() {
@@ -248,12 +279,14 @@
             document.getElementById('display-date-text').innerText = d.toLocaleDateString('zh-HK', { month: 'long', day: 'numeric', weekday: 'short' }) + " 📅";
             
             const data = db[dateStr] || { u: 0, a: 0, d: 0, t: 0, e_list: [], i_list: [] };
-            document.getElementById('in-uber').value = data.u || "";
-            document.getElementById('in-amap').value = data.a || "";
-            document.getElementById('in-didi').value = data.d || "";
-            document.getElementById('in-tada').value = data.t || "";
             
-            currentDayExpenses = data.e_list || [];
+            // 處理不同版本的數據格式 (例如舊版可能是 uber/amap 全稱)
+            document.getElementById('in-uber').value = data.u || data.uber || "";
+            document.getElementById('in-amap').value = data.a || data.amap || "";
+            document.getElementById('in-didi').value = data.d || data.didi || "";
+            document.getElementById('in-tada').value = data.t || data.tada || "";
+            
+            currentDayExpenses = data.e_list || (data.expense ? [{cat: '總支出', val: data.expense}] : []);
             currentDayOtherIncome = data.i_list || [];
             
             renderList('income');
