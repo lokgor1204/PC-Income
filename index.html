@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="司機助手">
-    <title>司機收入助手 (防遺失數據版)</title>
+    <title>司機收入助手 (V1.0)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -23,7 +23,7 @@
         }
         .app-container {
             padding-top: calc(var(--safe-top) + 20px);
-            padding-bottom: calc(var(--safe-bottom) + 40px);
+            padding-bottom: calc(var(--safe-bottom) + 60px);
         }
         input, select {
             background: #1c1c1e !important;
@@ -73,6 +73,7 @@
             opacity: 0;
             width: 100%;
             left: 0; top: 0; height: 100%;
+            z-index: 10;
             cursor: pointer;
         }
         #autosave-indicator {
@@ -90,6 +91,17 @@
             font-weight: 900;
             color: #ffffff;
         }
+        .version-tag {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 10px);
+            left: 15px;
+            font-size: 10px;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.1em;
+            pointer-events: none;
+            z-index: 50;
+        }
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -100,6 +112,9 @@
     </style>
 </head>
 <body class="px-4 overflow-x-hidden">
+    <!-- 版本號顯示 -->
+    <div class="version-tag">VER 1.0</div>
+
     <div class="app-container max-w-md mx-auto space-y-6">
         <!-- 標頭 -->
         <header class="flex justify-between items-end mb-2">
@@ -218,17 +233,8 @@
     </div>
 
     <script>
-        // 設定目前的存儲 Key
         const MASTER_KEY = 'DRIVER_APP_V8_STORAGE';
-        // 可能存在舊數據的 Key 列表
-        const OLD_KEYS = [
-            'DRIVER_APP_V7_STORAGE',
-            'DRIVER_APP_V6_STORAGE',
-            'DRIVER_APP_V5_STORAGE',
-            'DRIVER_APP_V4_STORAGE',
-            'driver_records',
-            'ridehail_tracker_v2'
-        ];
+        const OLD_KEYS = ['DRIVER_APP_V7_STORAGE', 'DRIVER_APP_V6_STORAGE', 'DRIVER_APP_V5_STORAGE', 'DRIVER_APP_V4_STORAGE', 'driver_records', 'ridehail_tracker_v2'];
         
         let db = {};
         let currentDayExpenses = [];
@@ -237,27 +243,19 @@
         let saveTimer;
 
         function initData() {
-            // 1. 嘗試讀取當前版本的數據
             const masterData = localStorage.getItem(MASTER_KEY);
             if (masterData) {
                 db = JSON.parse(masterData);
             } else {
-                // 2. 如果當前版本沒數據，嘗試自動遷移舊數據
-                console.log("Checking for old data...");
                 for (const oldKey of OLD_KEYS) {
                     const oldData = localStorage.getItem(oldKey);
                     if (oldData) {
                         try {
                             const parsed = JSON.parse(oldData);
-                            // 簡單合併或覆蓋
                             db = Object.assign(db, parsed);
-                            console.log(`Migrated data from ${oldKey}`);
-                        } catch (e) {
-                            console.error(`Failed to parse ${oldKey}`);
-                        }
+                        } catch (e) {}
                     }
                 }
-                // 遷移後立即存儲到新 Key，避免下次再遷移
                 saveToDisk();
             }
         }
@@ -280,7 +278,6 @@
             
             const data = db[dateStr] || { u: 0, a: 0, d: 0, t: 0, e_list: [], i_list: [] };
             
-            // 處理不同版本的數據格式 (例如舊版可能是 uber/amap 全稱)
             document.getElementById('in-uber').value = data.u || data.uber || "";
             document.getElementById('in-amap').value = data.a || data.amap || "";
             document.getElementById('in-didi').value = data.d || data.didi || "";
@@ -403,7 +400,7 @@
                 return `
                     <div class="flex-1 flex flex-col justify-end gap-1 relative h-full ${isSel ? 'bg-white/5 rounded-t-lg' : ''}">
                         <span class="bar-label-top ${isSel ? 'text-blue-400 font-black' : 'text-gray-600'}">${day.sum > 0 ? Math.round(day.sum) : ''}</span>
-                        <div class="w-full bg-blue-500 bar-segment rounded-t-sm" style="height: ${h}%"></div>
+                        <div class="w-full bg-blue-500 bar-segment rounded-t-sm" style="height: ${Math.max(h, 2)}%"></div>
                     </div>
                 `;
             }).join('');
