@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>司機收入助手 V1.6.4</title>
+    <title>司機收入助手 V1.6.5</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -50,14 +50,13 @@
             outline: none;
         }
 
-        /* 圖表樣式 */
         .chart-viewport {
-            height: 200px;
+            height: 160px;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             gap: 6px;
-            padding: 30px 5px 10px 5px;
+            padding: 25px 5px 5px 5px;
             position: relative;
             border-bottom: 1px solid var(--border-color);
         }
@@ -98,23 +97,17 @@
             overflow: hidden;
             background: rgba(128,128,128,0.1);
             transition: height 0.6s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-            min-height: 4px;
+            min-height: 2px;
         }
 
-        .bar-seg {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            color: white;
-            font-weight: bold;
-            overflow: hidden;
-        }
+        .bg-uber { background-color: #2563eb; }
+        .bg-amap { background-color: #3b82f6; }
+        .bg-didi { background-color: #f97316; }
+        .bg-tada { background-color: #eab308; }
+        .bg-other { background-color: #a855f7; }
 
-        /* 滾動列表樣式 */
         .list-scroll {
-            max-height: 85px; 
+            max-height: 120px; 
             overflow-y: auto;
             scrollbar-width: thin;
         }
@@ -135,14 +128,13 @@
         <!-- Header -->
         <div class="flex justify-between items-start pt-4">
             <div>
-                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.4</span></h1>
+                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.5</span></h1>
                 <div class="relative mt-1">
-                    <span id="date-label" class="text-blue-500 font-bold underline">選擇日期...</span>
+                    <span id="date-label" class="text-blue-500 font-bold underline cursor-pointer text-sm">選擇日期...</span>
                     <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <!-- 固定位置的深淺色切換鈕 -->
                 <button onclick="manualToggleTheme()" class="theme-toggle" id="theme-btn">🌓</button>
                 <div class="text-right">
                     <p class="text-[10px] font-bold text-gray-400 uppercase">今日純利</p>
@@ -152,11 +144,10 @@
         </div>
 
         <!-- 核心輸入區 -->
-        <div class="glass-card p-5 space-y-4">
-            <!-- 平台流水 -->
+        <div class="glass-card p-5 space-y-6">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="text-[10px] font-bold text-gray-400 block mb-1 uppercase">UBER</label>
+                    <label class="text-[10px] font-bold text-gray-400 block mb-1 uppercase text-blue-600">UBER</label>
                     <input type="number" id="val-u" class="w-full text-lg font-bold" placeholder="0" inputmode="decimal">
                 </div>
                 <div>
@@ -173,11 +164,11 @@
                 </div>
             </div>
 
-            <!-- 其他收入區 - 字體放大 -->
-            <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+            <!-- 其他收入 -->
+            <div>
                 <div class="flex justify-between items-end mb-2">
-                    <label class="text-[10px] font-bold text-purple-500 uppercase">其他收入</label>
-                    <span id="total-other-label" class="text-lg font-black text-purple-600 dark:text-purple-400">總其他收入: $0</span>
+                    <label class="text-[10px] font-bold text-purple-500 uppercase tracking-widest">其他收入</label>
+                    <span id="total-other-label" class="text-sm font-black text-purple-600 dark:text-purple-400">總計: $0</span>
                 </div>
                 <div class="flex gap-2">
                     <input type="number" id="other-val" class="flex-1" placeholder="金額" inputmode="decimal">
@@ -186,11 +177,11 @@
                 <div id="list-o" class="list-scroll mt-2 space-y-1"></div>
             </div>
 
-            <!-- 支出區 - 字體放大 -->
+            <!-- 支出區 -->
             <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div class="flex justify-between items-end mb-2">
-                    <label class="text-[10px] font-bold text-red-500 uppercase">支出</label>
-                    <span id="total-exp-label" class="text-lg font-black text-red-600 dark:text-red-400">總支出: $0</span>
+                    <label class="text-[10px] font-bold text-red-500 uppercase tracking-widest">支出項目</label>
+                    <span id="total-exp-label" class="text-sm font-black text-red-600 dark:text-red-400">總計: $0</span>
                 </div>
                 <div class="flex gap-2">
                     <select id="exp-cat" class="w-24">
@@ -207,37 +198,51 @@
             </div>
         </div>
 
-        <!-- 圖表 -->
+        <!-- 圖表分析 -->
         <div class="glass-card p-5">
-            <h3 class="font-bold mb-2">本週純利趨勢</h3>
+            <h3 class="font-bold text-sm mb-4">本週純利分析</h3>
             <div class="chart-viewport" id="chart-area">
                 <div class="y-guide" style="top: 0;"></div>
-                <div class="absolute right-0 top-[-8px] text-[8px] text-gray-400 font-bold">MAX $4,000</div>
+                <div class="absolute right-0 top-[-8px] text-[8px] text-gray-400 font-bold uppercase">最高 $4,000</div>
                 <div class="y-guide" style="top: 50%;"></div>
             </div>
-            <div class="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1">
+            <div class="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1 uppercase">
                 <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+            </div>
+            
+            <!-- 底部統計數據 -->
+            <div id="week-summary-details" class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 dark:bg-white/5 p-3 rounded-2xl">
+                    <p class="text-[9px] font-bold text-gray-400 uppercase">本週總流水</p>
+                    <p id="week-total-revenue" class="text-lg font-black">$0</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-white/5 p-3 rounded-2xl">
+                    <p class="text-[9px] font-bold text-gray-400 uppercase">本週總支出</p>
+                    <p id="week-total-expense" class="text-lg font-black text-red-500">$0</p>
+                </div>
+                <div class="col-span-2 bg-green-500/10 p-3 rounded-2xl flex justify-between items-center">
+                    <p class="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-widest">本週累積純利</p>
+                    <p id="week-total-profit" class="text-xl font-black text-green-600 dark:text-green-400">$0</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 【關鍵】使用通用 Key 名稱，確保版本更新時數據不丟失
         const STORAGE_KEY = 'DRIVER_APP_DATA_PERSISTENT'; 
         const THEME_KEY = 'DRIVER_APP_THEME_PERSISTENT';
         const MAX_VAL = 4000;
         
-        // 嘗試從多個舊版本 Key 遷移數據（平滑過渡）
         function migrateData() {
             const oldKeys = ['DRIVER_DATA_150', 'DRIVER_DATA_V1'];
             let combinedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            
             oldKeys.forEach(oldKey => {
                 const oldData = localStorage.getItem(oldKey);
                 if (oldData) {
-                    const parsed = JSON.parse(oldData);
-                    combinedData = { ...parsed, ...combinedData };
-                    // 遷移後可選擇刪除舊 Key 或保留
+                    try {
+                        const parsed = JSON.parse(oldData);
+                        combinedData = { ...parsed, ...combinedData };
+                    } catch(e) {}
                 }
             });
             return combinedData;
@@ -251,7 +256,6 @@
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
             currentDay = new Date(now.getTime() - offset).toISOString().split('T')[0];
-            
             initTheme();
             setupListeners();
             loadDay(currentDay);
@@ -287,15 +291,12 @@
             document.getElementById('date-picker').value = dateStr;
             const d = new Date(dateStr);
             document.getElementById('date-label').innerText = d.toLocaleDateString('zh-HK', { month:'short', day:'numeric', weekday:'short' });
-
             if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
             const data = db[currentDay];
-            
             document.getElementById('val-u').value = data.u || "";
             document.getElementById('val-a').value = data.a || "";
             document.getElementById('val-d').value = data.d || "";
             document.getElementById('val-t').value = data.t || "";
-            
             renderLists();
             refreshUI();
         }
@@ -306,7 +307,6 @@
             db[currentDay].a = parseFloat(document.getElementById('val-a').value) || 0;
             db[currentDay].d = parseFloat(document.getElementById('val-d').value) || 0;
             db[currentDay].t = parseFloat(document.getElementById('val-t').value) || 0;
-            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
             refreshUI();
         }
@@ -315,10 +315,11 @@
             const valInput = document.getElementById(type === 'o' ? 'other-val' : 'exp-val');
             const val = parseFloat(valInput.value);
             if(!val) return;
-
             if(type === 'o') {
+                if(!db[currentDay].o) db[currentDay].o = [];
                 db[currentDay].o.push({ v: val, id: Date.now() });
             } else {
+                if(!db[currentDay].e) db[currentDay].e = [];
                 const cat = document.getElementById('exp-cat').value;
                 db[currentDay].e.push({ v: val, c: cat, id: Date.now() });
             }
@@ -337,26 +338,25 @@
             const data = db[currentDay];
             const sumO = data.o ? data.o.reduce((acc, i) => acc + i.v, 0) : 0;
             const sumE = data.e ? data.e.reduce((acc, i) => acc + i.v, 0) : 0;
-
-            document.getElementById('total-other-label').innerText = `總其他收入: $${sumO}`;
-            document.getElementById('total-exp-label').innerText = `總支出: $${sumE}`;
-
-            document.getElementById('list-o').innerHTML = data.o.slice().reverse().map(i => `
+            document.getElementById('total-other-label').innerText = `總計: $${sumO}`;
+            document.getElementById('total-exp-label').innerText = `總計: $${sumE}`;
+            
+            document.getElementById('list-o').innerHTML = (data.o || []).slice().reverse().map(i => `
                 <div class="flex justify-between items-center bg-purple-500/10 p-2 rounded-lg">
-                    <span class="text-[10px] font-bold text-purple-500">其他收入</span>
+                    <span class="text-[10px] font-black text-purple-500 uppercase tracking-widest">其他收入</span>
                     <div class="flex items-center gap-2">
-                        <span class="font-bold">$${i.v}</span>
-                        <button onclick="removeItem('o', ${i.id})" class="text-gray-400 px-1">✕</button>
+                        <span class="font-bold text-sm text-purple-600 dark:text-purple-400">$${i.v}</span>
+                        <button onclick="removeItem('o', ${i.id})" class="text-gray-400 px-1 ml-1">✕</button>
                     </div>
                 </div>
             `).join('');
-
-            document.getElementById('list-e').innerHTML = data.e.slice().reverse().map(i => `
+            
+            document.getElementById('list-e').innerHTML = (data.e || []).slice().reverse().map(i => `
                 <div class="flex justify-between items-center bg-red-500/10 p-2 rounded-lg">
-                    <span class="text-[10px] font-bold text-red-400">${i.c}</span>
+                    <span class="text-[10px] font-black text-red-500 uppercase tracking-widest">${i.c}</span>
                     <div class="flex items-center gap-2">
-                        <span class="font-bold text-red-500">$${i.v}</span>
-                        <button onclick="removeItem('e', ${i.id})" class="text-gray-400 px-1">✕</button>
+                        <span class="font-bold text-sm text-red-600 dark:text-red-400">$${i.v}</span>
+                        <button onclick="removeItem('e', ${i.id})" class="text-gray-400 px-1 ml-1">✕</button>
                     </div>
                 </div>
             `).join('');
@@ -380,10 +380,12 @@
             const dayIdx = (now.getDay() + 6) % 7;
             const start = new Date(now);
             start.setDate(now.getDate() - dayIdx);
-
+            
             const area = document.getElementById('chart-area');
             const wrappers = area.querySelectorAll('.bar-wrapper');
             wrappers.forEach(w => w.remove());
+
+            let wRev = 0, wExp = 0;
 
             for(let i=0; i<7; i++) {
                 const date = new Date(start);
@@ -391,27 +393,59 @@
                 const k = date.toISOString().split('T')[0];
                 const d = db[k] || { u:0, a:0, d:0, t:0, o:[], e:[] };
                 
-                const totalIn = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + (d.o?d.o.reduce((a,b)=>a+b.v,0):0);
-                const net = totalIn - (d.e?d.e.reduce((a,b)=>a+b.v,0):0);
+                const sumO = d.o ? d.o.reduce((a,b)=>a+b.v,0) : 0;
+                const sumE = d.e ? d.e.reduce((a,b)=>a+b.v,0) : 0;
+                const dailyIn = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + sumO;
+                const net = dailyIn - sumE;
+                
+                wRev += dailyIn;
+                wExp += sumE;
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'bar-wrapper';
-
+                
                 const label = document.createElement('div');
                 label.className = 'bar-total-label';
-                label.innerText = `$${Math.round(net)}`;
+                label.innerText = net !== 0 ? `$${Math.round(net)}` : "";
                 wrapper.appendChild(label);
-                
+
                 const stack = document.createElement('div');
                 stack.className = 'bar-stack';
                 stack.style.height = `${Math.min((Math.max(0, net)/MAX_VAL)*100, 100)}%`;
                 
-                if(k === currentDay) stack.style.border = '2px solid #0a84ff';
-                if(net < 0) stack.style.backgroundColor = '#ef4444';
+                if (net > 0) {
+                    const total = dailyIn;
+                    const segments = [
+                        { v: d.u||0, c: 'bg-uber' },
+                        { v: d.a||0, c: 'bg-amap' },
+                        { v: d.d||0, c: 'bg-didi' },
+                        { v: d.t||0, c: 'bg-tada' },
+                        { v: sumO, c: 'bg-other' }
+                    ];
+                    segments.forEach(seg => {
+                        if (seg.v > 0) {
+                            const part = document.createElement('div');
+                            part.className = `w-full ${seg.c}`;
+                            part.style.height = `${(seg.v / total) * 100}%`;
+                            stack.appendChild(part);
+                        }
+                    });
+                } else if (net < 0) {
+                    stack.classList.add('bg-red-500');
+                    stack.style.height = `${Math.min((Math.abs(net)/MAX_VAL)*100, 100)}%`;
+                }
+
+                if(k === currentDay) {
+                    stack.style.boxShadow = '0 0 0 2px #0a84ff';
+                }
 
                 wrapper.appendChild(stack);
                 area.appendChild(wrapper);
             }
+
+            document.getElementById('week-total-revenue').innerText = `$${Math.round(wRev).toLocaleString()}`;
+            document.getElementById('week-total-expense').innerText = `$${Math.round(wExp).toLocaleString()}`;
+            document.getElementById('week-total-profit').innerText = `$${Math.round(wRev - wExp).toLocaleString()}`;
         }
     </script>
 </body>
