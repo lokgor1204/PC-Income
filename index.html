@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>司機收入助手 V1.6.9</title>
+    <title>司機收入助手 V1.7.2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,6 +15,13 @@
             --border-color: #d1d1d6;
             --input-bg: #f2f2f7;
             --accent-blue: #0a84ff;
+            
+            /* 平台顏色定義 */
+            --color-u: #2563eb; /* Uber - 藍 */
+            --color-a: #60a5fa; /* 高德 - 淺藍 */
+            --color-d: #fb923c; /* 滴滴 - 橙 */
+            --color-t: #eab308; /* TADA - 黃 */
+            --color-o: #a855f7; /* 其他 - 紫 */
         }
 
         .dark-mode {
@@ -107,8 +114,22 @@
             display: flex;
             flex-direction: column-reverse;
             border-radius: 4px 4px 0 0;
-            overflow: hidden;
+            overflow: visible;
             background: rgba(128,128,128,0.1);
+            position: relative;
+        }
+
+        /* 調整數值標籤位置，確保在 Bar 上方 */
+        .bar-label {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            font-weight: 900;
+            color: var(--text-main);
+            white-space: nowrap;
+            z-index: 10;
         }
 
         .pie-container {
@@ -137,12 +158,16 @@
             font-size: 16px !important;
         }
 
-        /* 支出行佈局 */
         .expense-row {
             display: flex;
             gap: 6px;
             align-items: center;
             width: 100%;
+        }
+
+        .platform-segment {
+            width: 100%;
+            transition: height 0.3s ease;
         }
     </style>
 </head>
@@ -153,7 +178,7 @@
         <!-- Header -->
         <div class="flex justify-between items-start pt-4">
             <div>
-                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.9</span></h1>
+                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.7.2</span></h1>
                 <div class="relative mt-1">
                     <span id="date-label" class="text-blue-500 font-bold underline text-sm">選擇日期...</span>
                     <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer">
@@ -168,7 +193,7 @@
             </div>
         </div>
 
-        <!-- 輸入區域 -->
+        <!-- 數據輸入 -->
         <div class="glass-card p-5 space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -189,7 +214,6 @@
                 </div>
             </div>
 
-            <!-- 其他收入與支出 -->
             <div class="grid grid-cols-1 gap-4 pt-2">
                 <div>
                     <div class="flex justify-between items-end mb-1">
@@ -209,7 +233,6 @@
                         <span id="total-exp-label" class="text-[10px] font-black text-red-500">$0</span>
                     </div>
                     <div class="expense-row">
-                        <!-- 類別格長度 100px -->
                         <select id="exp-cat" class="w-[100px] shrink-0 text-[11px] p-2">
                             <option>隧道</option>
                             <option>油/電</option>
@@ -217,7 +240,6 @@
                             <option>抄牌</option>
                             <option>其他</option>
                         </select>
-                        <!-- 金額框自動適應 -->
                         <input type="number" id="exp-val" class="flex-1 min-w-0 text-sm" placeholder="金額" inputmode="decimal">
                         <button onclick="addItem('e')" class="bg-red-500 text-white w-12 h-11 flex items-center justify-center rounded-xl font-bold shrink-0">＋</button>
                     </div>
@@ -226,20 +248,26 @@
             </div>
         </div>
 
-        <!-- 分析卡片 -->
+        <!-- 圖表分析 -->
         <div class="glass-card">
             <div class="swiper-container" id="swiper">
                 <div class="swiper-wrapper" id="swiper-wrapper">
-                    
-                    <!-- 週分析 -->
                     <div class="swiper-slide">
                         <h3 class="font-bold text-sm mb-4">本週純利分析</h3>
-                        <div class="chart-viewport" id="chart-area">
-                            <div class="absolute left-0 right-0 border-t border-dashed border-gray-200 dark:border-gray-700 opacity-30" style="top:0"></div>
-                        </div>
+                        <div class="chart-viewport" id="chart-area"></div>
                         <div class="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1 uppercase">
                             <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
                         </div>
+                        
+                        <!-- 平台顏色圖例 -->
+                        <div class="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-4 text-[9px] font-bold text-gray-400 uppercase">
+                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:var(--color-u)"></span>Uber</div>
+                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:var(--color-a)"></span>高德</div>
+                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:var(--color-d)"></span>滴滴</div>
+                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:var(--color-t)"></span>Tada</div>
+                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:var(--color-o)"></span>其他</div>
+                        </div>
+
                         <div class="mt-4 grid grid-cols-2 gap-2">
                             <div class="bg-gray-50 dark:bg-white/5 p-2 rounded-xl">
                                 <p class="text-[8px] font-bold text-gray-400">週總流水</p>
@@ -252,7 +280,6 @@
                         </div>
                     </div>
 
-                    <!-- 月概覽 -->
                     <div class="swiper-slide monthly-overview-slide">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="font-bold text-sm">本月概覽 (<span id="month-label">---</span>)</h3>
@@ -279,7 +306,6 @@
                             <div id="week-legend" class="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px] font-bold text-gray-400 mt-4"></div>
                         </div>
                     </div>
-
                 </div>
             </div>
             <div class="dot-container">
@@ -290,28 +316,31 @@
     </div>
 
     <script>
-        // 修正後的存儲密鑰，對應 V1.6.7 版本
-        const STORAGE_KEY = 'DRIVER_APP_DATA_V1.6.7';
+        // 永久固定密鑰
+        const STORAGE_KEY = 'DRIVER_APP_DATA_V1';
         let db = {};
         let currentDay = "";
         let isDarkMode = false;
         let currentPage = 0;
 
         window.onload = function() {
-            // 加載歷史數據
+            // 數據讀取
             const saved = localStorage.getItem(STORAGE_KEY);
             if(saved) {
                 try {
                     db = JSON.parse(saved);
                 } catch(e) {
+                    console.error("Data load error", e);
                     db = {};
                 }
             }
 
-            // 日期初始化
+            // 初始化日期
             const now = new Date();
-            const offset = now.getTimezoneOffset() * 60000;
-            currentDay = new Date(now.getTime() - offset).toISOString().split('T')[0];
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            currentDay = `${year}-${month}-${day}`;
             
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 manualToggleTheme();
@@ -322,9 +351,13 @@
         };
 
         function setupListeners() {
-            document.getElementById('date-picker').onchange = (e) => loadDay(e.target.value);
+            const dp = document.getElementById('date-picker');
+            dp.addEventListener('change', (e) => {
+                loadDay(e.target.value);
+            });
+
             ['val-u', 'val-a', 'val-d', 'val-t'].forEach(id => {
-                document.getElementById(id).oninput = saveData;
+                document.getElementById(id).addEventListener('input', saveData);
             });
             
             let touchStartX = 0;
@@ -350,35 +383,45 @@
         }
 
         function loadDay(dateStr) {
+            if(!dateStr) return;
             currentDay = dateStr;
             document.getElementById('date-picker').value = dateStr;
-            const d = new Date(dateStr);
+            
+            const dParts = dateStr.split('-');
+            const d = new Date(dParts[0], dParts[1]-1, dParts[2]);
             document.getElementById('date-label').innerText = d.toLocaleDateString('zh-HK', { month:'short', day:'numeric', weekday:'short' });
             
             if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
             const data = db[currentDay];
+            
             document.getElementById('val-u').value = data.u || "";
             document.getElementById('val-a').value = data.a || "";
             document.getElementById('val-d').value = data.d || "";
             document.getElementById('val-t').value = data.t || "";
+            
             renderLists();
             refreshUI();
         }
 
         function saveData() {
+            if(!currentDay) return;
             if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
+            
             db[currentDay].u = parseFloat(document.getElementById('val-u').value) || 0;
             db[currentDay].a = parseFloat(document.getElementById('val-a').value) || 0;
             db[currentDay].d = parseFloat(document.getElementById('val-d').value) || 0;
             db[currentDay].t = parseFloat(document.getElementById('val-t').value) || 0;
+            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
             refreshUI();
         }
 
         function addItem(type) {
+            if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
             const valInput = document.getElementById(type === 'o' ? 'other-val' : 'exp-val');
             const val = parseFloat(valInput.value);
             if(!val) return;
+
             if(type === 'o') {
                 if(!db[currentDay].o) db[currentDay].o = [];
                 db[currentDay].o.push({ v: val, id: Date.now() });
@@ -393,9 +436,11 @@
         }
 
         function removeItem(type, id) {
-            db[currentDay][type] = db[currentDay][type].filter(item => item.id !== id);
-            renderLists();
-            saveData();
+            if(db[currentDay] && db[currentDay][type]) {
+                db[currentDay][type] = db[currentDay][type].filter(i => i.id !== id);
+                renderLists();
+                saveData();
+            }
         }
 
         function renderLists() {
@@ -434,27 +479,124 @@
         }
 
         function updateCharts() {
-            const now = new Date(currentDay);
+            const nowParts = currentDay.split('-');
+            const now = new Date(nowParts[0], nowParts[1]-1, nowParts[2]);
             const MAX_VAL = 4000;
             const dayIdx = (now.getDay() + 6) % 7;
             const startW = new Date(now);
             startW.setDate(now.getDate() - dayIdx);
             
             const area = document.getElementById('chart-area');
-            area.querySelectorAll('.bar-wrapper').forEach(w => w.remove());
+            area.innerHTML = '<div class="absolute left-0 right-0 border-t border-dashed border-gray-200 dark:border-gray-700 opacity-30" style="top:0"></div>';
             let wRev = 0, wExp = 0;
 
             for(let i=0; i<7; i++) {
                 const date = new Date(startW);
                 date.setDate(startW.getDate() + i);
-                const k = date.toISOString().split('T')[0];
+                const k = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
                 const d = db[k] || { u:0, a:0, d:0, t:0, o:[], e:[] };
+                
                 const sO = (d.o || []).reduce((a,b)=>a+b.v,0);
                 const sE = (d.e || []).reduce((a,b)=>a+b.v,0);
-                const rev = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + sO;
+                
+                const uVal = d.u || 0;
+                const aVal = d.a || 0;
+                const dVal = d.d || 0;
+                const tVal = d.t || 0;
+                const rev = uVal + aVal + dVal + tVal + sO;
                 const net = rev - sE;
+                
                 wRev += rev; wExp += sE;
 
                 const wrapper = document.createElement('div');
-                wrapper.className = 'flex-1 flex flex-col justify-end items-center h-full relative bar-wrapper';
-                const st
+                wrapper.className = 'flex-1 flex flex-col justify-end items-center h-full relative';
+                
+                const stack = document.createElement('div');
+                stack.className = 'bar-stack w-full';
+                stack.style.height = `${Math.min((Math.max(2, net)/MAX_VAL)*100, 100)}%`;
+                
+                // 添加各平台細分顏色 (只有當純利 > 0 時顯示比例)
+                if (net > 0) {
+                    const platforms = [
+                        { v: uVal, c: 'var(--color-u)' },
+                        { v: aVal, c: 'var(--color-a)' },
+                        { v: dVal, c: 'var(--color-d)' },
+                        { v: tVal, c: 'var(--color-t)' },
+                        { v: sO, c: 'var(--color-o)' }
+                    ];
+                    
+                    platforms.forEach(p => {
+                        if (p.v > 0) {
+                            const seg = document.createElement('div');
+                            seg.className = 'platform-segment';
+                            seg.style.height = `${(p.v / rev) * 100}%`;
+                            seg.style.backgroundColor = p.c;
+                            stack.appendChild(seg);
+                        }
+                    });
+
+                    // 添加數值標籤 (柱頂)
+                    const label = document.createElement('div');
+                    label.className = 'bar-label';
+                    label.innerText = Math.round(net);
+                    stack.appendChild(label);
+                }
+
+                if(k === currentDay) stack.style.boxShadow = '0 0 0 2px #0a84ff';
+                wrapper.appendChild(stack);
+                area.appendChild(wrapper);
+            }
+            document.getElementById('week-total-revenue').innerText = `$${Math.round(wRev).toLocaleString()}`;
+            document.getElementById('week-total-expense').innerText = `$${Math.round(wExp).toLocaleString()}`;
+
+            // 月份更新邏輯
+            const monthStr = `${nowParts[0]}-${nowParts[1]}`;
+            document.getElementById('month-label').innerText = now.toLocaleDateString('zh-HK', { month: 'long' });
+            
+            let mRev = 0, mExp = 0;
+            let weeklyRevenues = [0, 0, 0, 0, 0, 0];
+
+            Object.keys(db).forEach(k => {
+                if (k.startsWith(monthStr)) {
+                    const d = db[k];
+                    const dayRev = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + (d.o ? d.o.reduce((a,b)=>a+b.v,0) : 0);
+                    mRev += dayRev;
+                    mExp += (d.e ? d.e.reduce((a,b)=>a+b.v,0) : 0);
+                    
+                    const date = new Date(k);
+                    const firstDay = new Date(nowParts[0], nowParts[1]-1, 1);
+                    const startOffset = (firstDay.getDay() + 6) % 7; 
+                    const weekIdx = Math.floor((date.getDate() + startOffset - 1) / 7);
+                    if(weeklyRevenues[weekIdx] !== undefined) weeklyRevenues[weekIdx] += dayRev;
+                }
+            });
+
+            document.getElementById('month-total-profit').innerText = `$${Math.round(mRev - mExp).toLocaleString()}`;
+            document.getElementById('month-rev-val').innerText = `$${Math.round(mRev).toLocaleString()}`;
+            document.getElementById('month-exp-val').innerText = `$${Math.round(mExp).toLocaleString()}`;
+
+            const pieSvg = document.getElementById('month-pie-chart');
+            const legend = document.getElementById('week-legend');
+            pieSvg.innerHTML = ""; legend.innerHTML = "";
+            const colors = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+            let acc = 0;
+            weeklyRevenues.forEach((rev, idx) => {
+                if (mRev === 0 || rev <= 0) return;
+                const p = (rev / mRev) * 100;
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("r", "16"); circle.setAttribute("cx", "16"); circle.setAttribute("cy", "16");
+                circle.setAttribute("fill", "transparent");
+                circle.setAttribute("stroke", colors[idx]);
+                circle.setAttribute("stroke-width", "32");
+                circle.setAttribute("stroke-dasharray", `${p} 100`);
+                circle.setAttribute("stroke-dashoffset", `-${acc}`);
+                pieSvg.appendChild(circle);
+                legend.innerHTML += `<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${colors[idx]}"></span>第${idx+1}週</div>`;
+                acc += p;
+            });
+            if(mRev === 0) pieSvg.innerHTML = `<circle r="16" cx="16" cy="16" fill="transparent" stroke="#f3f4f6" stroke-width="32" stroke-dasharray="100 100" />`;
+        }
+    </script>
+</body>
+</html>
+
