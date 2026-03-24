@@ -137,6 +137,7 @@
             font-size: 16px !important;
         }
 
+        /* 支出行佈局 */
         .expense-row {
             display: flex;
             gap: 6px;
@@ -149,7 +150,7 @@
 
     <div class="max-w-md mx-auto space-y-4 pb-24">
         
-        <!-- 頂部欄 -->
+        <!-- Header -->
         <div class="flex justify-between items-start pt-4">
             <div>
                 <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.9</span></h1>
@@ -167,7 +168,7 @@
             </div>
         </div>
 
-        <!-- 數據輸入區 -->
+        <!-- 輸入區域 -->
         <div class="glass-card p-5 space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -188,7 +189,7 @@
                 </div>
             </div>
 
-            <!-- 其他收支 -->
+            <!-- 其他收入與支出 -->
             <div class="grid grid-cols-1 gap-4 pt-2">
                 <div>
                     <div class="flex justify-between items-end mb-1">
@@ -208,6 +209,7 @@
                         <span id="total-exp-label" class="text-[10px] font-black text-red-500">$0</span>
                     </div>
                     <div class="expense-row">
+                        <!-- 類別格長度 100px -->
                         <select id="exp-cat" class="w-[100px] shrink-0 text-[11px] p-2">
                             <option>隧道</option>
                             <option>油/電</option>
@@ -215,6 +217,7 @@
                             <option>抄牌</option>
                             <option>其他</option>
                         </select>
+                        <!-- 金額框自動適應 -->
                         <input type="number" id="exp-val" class="flex-1 min-w-0 text-sm" placeholder="金額" inputmode="decimal">
                         <button onclick="addItem('e')" class="bg-red-500 text-white w-12 h-11 flex items-center justify-center rounded-xl font-bold shrink-0">＋</button>
                     </div>
@@ -223,7 +226,7 @@
             </div>
         </div>
 
-        <!-- 分析圖表卡片 -->
+        <!-- 分析卡片 -->
         <div class="glass-card">
             <div class="swiper-container" id="swiper">
                 <div class="swiper-wrapper" id="swiper-wrapper">
@@ -287,31 +290,29 @@
     </div>
 
     <script>
-        // 核心存儲密鑰，請確保 V1 與之前一致
-        const STORAGE_KEY = 'DRIVER_APP_DATA_V1';
+        // 修正後的存儲密鑰，對應 V1.6.7 版本
+        const STORAGE_KEY = 'DRIVER_APP_DATA_V1.6.7';
         let db = {};
         let currentDay = "";
         let isDarkMode = false;
         let currentPage = 0;
 
         window.onload = function() {
-            // 從本地加載數據
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
+            // 加載歷史數據
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if(saved) {
                 try {
-                    db = JSON.parse(savedData);
-                } catch (e) {
-                    console.error("數據格式錯誤", e);
+                    db = JSON.parse(saved);
+                } catch(e) {
                     db = {};
                 }
             }
 
-            // 初始化日期
+            // 日期初始化
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
             currentDay = new Date(now.getTime() - offset).toISOString().split('T')[0];
             
-            // 深色模式探測
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 manualToggleTheme();
             }
@@ -354,40 +355,30 @@
             const d = new Date(dateStr);
             document.getElementById('date-label').innerText = d.toLocaleDateString('zh-HK', { month:'short', day:'numeric', weekday:'short' });
             
-            // 確保該日期對象存在
-            if(!db[currentDay]) {
-                db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
-            }
-
+            if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
             const data = db[currentDay];
             document.getElementById('val-u').value = data.u || "";
             document.getElementById('val-a').value = data.a || "";
             document.getElementById('val-d').value = data.d || "";
             document.getElementById('val-t').value = data.t || "";
-            
             renderLists();
             refreshUI();
         }
 
         function saveData() {
             if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
-            
             db[currentDay].u = parseFloat(document.getElementById('val-u').value) || 0;
             db[currentDay].a = parseFloat(document.getElementById('val-a').value) || 0;
             db[currentDay].d = parseFloat(document.getElementById('val-d').value) || 0;
             db[currentDay].t = parseFloat(document.getElementById('val-t').value) || 0;
-            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
             refreshUI();
         }
 
         function addItem(type) {
-            if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
-            
             const valInput = document.getElementById(type === 'o' ? 'other-val' : 'exp-val');
             const val = parseFloat(valInput.value);
             if(!val) return;
-
             if(type === 'o') {
                 if(!db[currentDay].o) db[currentDay].o = [];
                 db[currentDay].o.push({ v: val, id: Date.now() });
@@ -396,25 +387,21 @@
                 const cat = document.getElementById('exp-cat').value;
                 db[currentDay].e.push({ v: val, c: cat, id: Date.now() });
             }
-            
             valInput.value = "";
             renderLists();
             saveData();
         }
 
         function removeItem(type, id) {
-            if(db[currentDay] && db[currentDay][type]) {
-                db[currentDay][type] = db[currentDay][type].filter(item => item.id !== id);
-                renderLists();
-                saveData();
-            }
+            db[currentDay][type] = db[currentDay][type].filter(item => item.id !== id);
+            renderLists();
+            saveData();
         }
 
         function renderLists() {
             const data = db[currentDay] || { o:[], e:[] };
             const sumO = (data.o || []).reduce((acc, i) => acc + i.v, 0);
             const sumE = (data.e || []).reduce((acc, i) => acc + i.v, 0);
-            
             document.getElementById('total-other-label').innerText = `$${sumO}`;
             document.getElementById('total-exp-label').innerText = `$${sumE}`;
             
@@ -449,7 +436,6 @@
         function updateCharts() {
             const now = new Date(currentDay);
             const MAX_VAL = 4000;
-
             const dayIdx = (now.getDay() + 6) % 7;
             const startW = new Date(now);
             startW.setDate(now.getDate() - dayIdx);
@@ -471,67 +457,4 @@
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'flex-1 flex flex-col justify-end items-center h-full relative bar-wrapper';
-                const stack = document.createElement('div');
-                stack.className = 'bar-stack w-full';
-                stack.style.height = `${Math.min((Math.max(2, net)/MAX_VAL)*100, 100)}%`;
-                if(k === currentDay) stack.style.boxShadow = '0 0 0 2px #0a84ff';
-                wrapper.appendChild(stack);
-                area.appendChild(wrapper);
-            }
-            document.getElementById('week-total-revenue').innerText = `$${Math.round(wRev).toLocaleString()}`;
-            document.getElementById('week-total-expense').innerText = `$${Math.round(wExp).toLocaleString()}`;
-
-            const targetMonth = now.getMonth();
-            const targetYear = now.getFullYear();
-            const monthStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
-            document.getElementById('month-label').innerText = now.toLocaleDateString('zh-HK', { month: 'long' });
-            
-            let mRev = 0, mExp = 0;
-            let weeklyRevenues = [0, 0, 0, 0, 0, 0];
-
-            Object.keys(db).forEach(k => {
-                if (k.startsWith(monthStr)) {
-                    const d = db[k];
-                    const dayRev = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + (d.o ? d.o.reduce((a,b)=>a+b.v,0) : 0);
-                    mRev += dayRev;
-                    mExp += (d.e ? d.e.reduce((a,b)=>a+b.v,0) : 0);
-                    
-                    const date = new Date(k);
-                    const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
-                    const startOffset = (firstDayOfMonth.getDay() + 6) % 7; 
-                    const weekIdx = Math.floor((date.getDate() + startOffset - 1) / 7);
-                    if(weeklyRevenues[weekIdx] !== undefined) weeklyRevenues[weekIdx] += dayRev;
-                }
-            });
-
-            document.getElementById('month-total-profit').innerText = `$${Math.round(mRev - mExp).toLocaleString()}`;
-            document.getElementById('month-rev-val').innerText = `$${Math.round(mRev).toLocaleString()}`;
-            document.getElementById('month-exp-val').innerText = `$${Math.round(mExp).toLocaleString()}`;
-
-            const pieSvg = document.getElementById('month-pie-chart');
-            const legend = document.getElementById('week-legend');
-            pieSvg.innerHTML = ""; legend.innerHTML = "";
-
-            const colors = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
-            let acc = 0;
-            weeklyRevenues.forEach((rev, idx) => {
-                if (mRev === 0 || rev <= 0) return;
-                const p = (rev / mRev) * 100;
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("r", "16"); circle.setAttribute("cx", "16"); circle.setAttribute("cy", "16");
-                circle.setAttribute("fill", "transparent");
-                circle.setAttribute("stroke", colors[idx]);
-                circle.setAttribute("stroke-width", "32");
-                circle.setAttribute("stroke-dasharray", `${p} 100`);
-                circle.setAttribute("stroke-dashoffset", `-${acc}`);
-                pieSvg.appendChild(circle);
-                
-                legend.innerHTML += `<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${colors[idx]}"></span>第${idx+1}週</div>`;
-                acc += p;
-            });
-            if(mRev === 0) pieSvg.innerHTML = `<circle r="16" cx="16" cy="16" fill="transparent" stroke="#f3f4f6" stroke-width="32" stroke-dasharray="100 100" />`;
-        }
-    </script>
-</body>
-</html>
-
+                const st
