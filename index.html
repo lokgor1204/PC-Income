@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>司機收入助手 V1.6.6</title>
+    <title>司機收入助手 V1.6.7</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -32,6 +32,7 @@
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             transition: background-color 0.3s, color 0.3s;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
         .glass-card {
@@ -39,6 +40,7 @@
             border: 1px solid var(--border-color);
             border-radius: 24px;
             transition: background-color 0.3s;
+            overflow: hidden; /* 防止內容溢出卡片 */
         }
 
         input, select {
@@ -46,11 +48,11 @@
             border: 1px solid var(--border-color) !important;
             color: var(--text-main) !important;
             border-radius: 12px !important;
-            padding: 10px !important;
+            padding: 8px 10px !important;
             outline: none;
+            font-size: 16px !important; /* 防止 iOS 自動放大 */
         }
 
-        /* 聲明彈窗樣式 */
         #privacy-modal {
             display: none;
             position: fixed;
@@ -146,7 +148,6 @@
 </head>
 <body class="p-4">
 
-    <!-- 本地數據聲明彈窗 -->
     <div id="privacy-modal">
         <div class="modal-content border border-gray-200 dark:border-gray-800">
             <div class="text-4xl mb-4">🛡️</div>
@@ -154,9 +155,9 @@
             <div class="text-sm text-gray-500 dark:text-gray-400 space-y-3 leading-relaxed mb-6">
                 <p>本程式為純本地應用工具。為了保護您的隱私：</p>
                 <ul class="text-left bg-gray-100 dark:bg-white/5 p-3 rounded-xl space-y-2">
-                    <li class="flex items-start gap-2">✅ <span class="text-xs">所有輸入的數據（收入、支出）僅儲存於您目前使用的手機瀏覽器內。</span></li>
-                    <li class="flex items-start gap-2">🚫 <span class="text-xs">數據並不會上傳到任何伺服器或雲端數據庫。</span></li>
-                    <li class="flex items-start gap-2">⚠️ <span class="text-xs">清除瀏覽器緩存或更換手機將會導致數據丟失，請自行留意。</span></li>
+                    <li class="flex items-start gap-2">✅ <span class="text-xs">數據僅儲存於您目前使用的手機瀏覽器內。</span></li>
+                    <li class="flex items-start gap-2">🚫 <span class="text-xs">數據並不會上傳到任何伺服器。</span></li>
+                    <li class="flex items-start gap-2">⚠️ <span class="text-xs">清除瀏覽器緩存將導致數據丟失，請自行留意。</span></li>
                 </ul>
                 <p class="font-bold text-gray-700 dark:text-gray-200">請各位放心使用。</p>
             </div>
@@ -168,10 +169,9 @@
 
     <div class="max-w-md mx-auto space-y-4 pb-24">
         
-        <!-- Header -->
         <div class="flex justify-between items-start pt-4">
             <div>
-                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.6</span></h1>
+                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.7</span></h1>
                 <div class="relative mt-1">
                     <span id="date-label" class="text-blue-500 font-bold underline cursor-pointer text-sm">選擇日期...</span>
                     <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer">
@@ -186,7 +186,6 @@
             </div>
         </div>
 
-        <!-- 核心輸入區 -->
         <div class="glass-card p-5 space-y-6">
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -214,34 +213,33 @@
                     <span id="total-other-label" class="text-sm font-black text-purple-600 dark:text-purple-400">總計: $0</span>
                 </div>
                 <div class="flex gap-2">
-                    <input type="number" id="other-val" class="flex-1" placeholder="金額" inputmode="decimal">
-                    <button onclick="addItem('o')" class="bg-purple-500 text-white px-5 rounded-xl font-bold active:opacity-70">＋</button>
+                    <input type="number" id="other-val" class="flex-1 min-w-0" placeholder="金額" inputmode="decimal">
+                    <button onclick="addItem('o')" class="bg-purple-500 text-white px-4 rounded-xl font-bold active:opacity-70 shrink-0">＋</button>
                 </div>
                 <div id="list-o" class="list-scroll mt-2 space-y-1"></div>
             </div>
 
-            <!-- 支出區 -->
+            <!-- 支出區 - 優化佈局防止溢出 -->
             <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div class="flex justify-between items-end mb-2">
                     <label class="text-[10px] font-bold text-red-500 uppercase tracking-widest">支出項目</label>
                     <span id="total-exp-label" class="text-sm font-black text-red-600 dark:text-red-400">總計: $0</span>
                 </div>
-                <div class="flex gap-2">
-                    <select id="exp-cat" class="w-24">
+                <div class="flex gap-2 items-center">
+                    <select id="exp-cat" class="w-[85px] shrink-0 text-sm">
                         <option>隧道</option>
                         <option>油/電</option>
                         <option>供車</option>
                         <option>抄牌</option>
                         <option>其他</option>
                     </select>
-                    <input type="number" id="exp-val" class="flex-1" placeholder="金額" inputmode="decimal">
-                    <button onclick="addItem('e')" class="bg-red-500 text-white px-5 rounded-xl font-bold active:opacity-70">＋</button>
+                    <input type="number" id="exp-val" class="flex-1 min-w-0" placeholder="金額" inputmode="decimal">
+                    <button onclick="addItem('e')" class="bg-red-500 text-white px-4 py-2.5 rounded-xl font-bold active:opacity-70 shrink-0">＋</button>
                 </div>
                 <div id="list-e" class="list-scroll mt-2 space-y-1"></div>
             </div>
         </div>
 
-        <!-- 圖表分析 -->
         <div class="glass-card p-5">
             <h3 class="font-bold text-sm mb-4">本週純利分析</h3>
             <div class="chart-viewport" id="chart-area">
@@ -253,7 +251,6 @@
                 <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
             </div>
             
-            <!-- 底部統計數據 -->
             <div id="week-summary-details" class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-4">
                 <div class="bg-gray-50 dark:bg-white/5 p-3 rounded-2xl">
                     <p class="text-[9px] font-bold text-gray-400 uppercase">本週總流水</p>
