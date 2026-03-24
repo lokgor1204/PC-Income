@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>司機收入助手 V1.6.7</title>
+    <title>司機收入助手 V1.6.9</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -29,7 +29,7 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             transition: background-color 0.3s, color 0.3s;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
@@ -39,44 +39,62 @@
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 24px;
-            transition: background-color 0.3s;
-            overflow: hidden; /* 防止內容溢出卡片 */
+            overflow: hidden;
         }
 
-        input, select {
-            background: var(--input-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            color: var(--text-main) !important;
-            border-radius: 12px !important;
-            padding: 8px 10px !important;
-            outline: none;
-            font-size: 16px !important; /* 防止 iOS 自動放大 */
+        /* 滑動分頁樣式 */
+        .swiper-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
         }
 
-        #privacy-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            align-items: center;
-            justify-content: center;
+        .swiper-wrapper {
+            display: flex;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 200%;
+        }
+
+        .swiper-slide {
+            width: 50%;
+            flex-shrink: 0;
             padding: 20px;
         }
 
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 28px;
-            max-width: 400px;
-            width: 100%;
-            padding: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            text-align: center;
+        /* 強制本月概覽背景為白色 */
+        .monthly-overview-slide {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        
+        .dark-mode .monthly-overview-slide {
+            background-color: #1c1c1e !important;
+            color: #ffffff !important;
+        }
+
+        .dot-container {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: var(--accent-blue);
+            width: 16px;
+            border-radius: 3px;
         }
 
         .chart-viewport {
-            height: 160px;
+            height: 140px;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
@@ -86,99 +104,65 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .y-guide {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed var(--border-color);
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        .bar-wrapper {
-            flex: 1;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
-            position: relative;
-        }
-
-        .bar-total-label {
-            position: absolute;
-            top: -20px;
-            font-size: 9px;
-            font-weight: 900;
-            color: var(--text-main);
-            white-space: nowrap;
-        }
-
         .bar-stack {
             width: 100%;
             display: flex;
             flex-direction: column-reverse;
-            border-radius: 6px 6px 0 0;
+            border-radius: 4px 4px 0 0;
             overflow: hidden;
             background: rgba(128,128,128,0.1);
-            transition: height 0.6s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-            min-height: 2px;
         }
 
-        .bg-uber { background-color: #2563eb; }
-        .bg-amap { background-color: #3b82f6; }
-        .bg-didi { background-color: #f97316; }
-        .bg-tada { background-color: #eab308; }
-        .bg-other { background-color: #a855f7; }
+        .pie-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 10px auto;
+        }
+        
+        .pie-svg {
+            transform: rotate(-90deg);
+            border-radius: 50%;
+        }
 
         .list-scroll {
             max-height: 120px; 
             overflow-y: auto;
-            scrollbar-width: thin;
         }
 
-        .theme-toggle {
-            padding: 6px 10px;
-            border-radius: 12px;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            font-size: 16px;
+        input, select {
+            background: var(--input-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+            border-radius: 12px !important;
+            padding: 10px !important;
+            font-size: 16px !important;
+        }
+
+        /* 支出行排版優化 */
+        .expense-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            width: 100%;
         }
     </style>
 </head>
 <body class="p-4">
 
-    <div id="privacy-modal">
-        <div class="modal-content border border-gray-200 dark:border-gray-800">
-            <div class="text-4xl mb-4">🛡️</div>
-            <h3 class="text-xl font-black mb-3">隱私與數據聲明</h3>
-            <div class="text-sm text-gray-500 dark:text-gray-400 space-y-3 leading-relaxed mb-6">
-                <p>本程式為純本地應用工具。為了保護您的隱私：</p>
-                <ul class="text-left bg-gray-100 dark:bg-white/5 p-3 rounded-xl space-y-2">
-                    <li class="flex items-start gap-2">✅ <span class="text-xs">數據僅儲存於您目前使用的手機瀏覽器內。</span></li>
-                    <li class="flex items-start gap-2">🚫 <span class="text-xs">數據並不會上傳到任何伺服器。</span></li>
-                    <li class="flex items-start gap-2">⚠️ <span class="text-xs">清除瀏覽器緩存將導致數據丟失，請自行留意。</span></li>
-                </ul>
-                <p class="font-bold text-gray-700 dark:text-gray-200">請各位放心使用。</p>
-            </div>
-            <button onclick="acceptPrivacy()" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-black active:opacity-70 shadow-lg shadow-blue-500/20">
-                我明白並接受
-            </button>
-        </div>
-    </div>
-
     <div class="max-w-md mx-auto space-y-4 pb-24">
         
+        <!-- Header -->
         <div class="flex justify-between items-start pt-4">
             <div>
-                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.7</span></h1>
+                <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.9</span></h1>
                 <div class="relative mt-1">
-                    <span id="date-label" class="text-blue-500 font-bold underline cursor-pointer text-sm">選擇日期...</span>
+                    <span id="date-label" class="text-blue-500 font-bold underline text-sm">選擇日期...</span>
                     <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="manualToggleTheme()" class="theme-toggle" id="theme-btn">🌓</button>
+                <button onclick="manualToggleTheme()" class="p-2 rounded-xl bg-gray-200 dark:bg-white/10" id="theme-btn">🌙</button>
                 <div class="text-right">
                     <p class="text-[10px] font-bold text-gray-400 uppercase">今日純利</p>
                     <h2 id="summary-profit" class="text-3xl font-black text-green-500">$0</h2>
@@ -186,159 +170,173 @@
             </div>
         </div>
 
-        <div class="glass-card p-5 space-y-6">
+        <!-- 輸入區域 -->
+        <div class="glass-card p-5 space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="text-[10px] font-bold text-gray-400 block mb-1 uppercase text-blue-600">UBER</label>
+                    <label class="text-[10px] font-bold text-blue-600 block mb-1">UBER</label>
                     <input type="number" id="val-u" class="w-full text-lg font-bold" placeholder="0" inputmode="decimal">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-blue-400 block mb-1 uppercase">AMAP 高德</label>
+                    <label class="text-[10px] font-bold text-blue-400 block mb-1">AMAP 高德</label>
                     <input type="number" id="val-a" class="w-full text-lg font-bold" placeholder="0" inputmode="decimal">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-orange-400 block mb-1 uppercase">DIDI 滴滴</label>
+                    <label class="text-[10px] font-bold text-orange-400 block mb-1">DIDI 滴滴</label>
                     <input type="number" id="val-d" class="w-full text-lg font-bold" placeholder="0" inputmode="decimal">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-yellow-500 block mb-1 uppercase">TADA</label>
+                    <label class="text-[10px] font-bold text-yellow-500 block mb-1">TADA</label>
                     <input type="number" id="val-t" class="w-full text-lg font-bold" placeholder="0" inputmode="decimal">
                 </div>
             </div>
 
-            <!-- 其他收入 -->
-            <div>
-                <div class="flex justify-between items-end mb-2">
-                    <label class="text-[10px] font-bold text-purple-500 uppercase tracking-widest">其他收入</label>
-                    <span id="total-other-label" class="text-sm font-black text-purple-600 dark:text-purple-400">總計: $0</span>
+            <!-- 其他收入與支出 -->
+            <div class="grid grid-cols-1 gap-4 pt-2">
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="text-[10px] font-bold text-purple-500 uppercase">其他收入</label>
+                        <span id="total-other-label" class="text-[10px] font-black text-purple-500">$0</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="other-val" class="flex-1 text-sm" placeholder="金額" inputmode="decimal">
+                        <button onclick="addItem('o')" class="bg-purple-500 text-white px-4 rounded-xl font-bold">＋</button>
+                    </div>
+                    <div id="list-o" class="list-scroll mt-2 space-y-1"></div>
                 </div>
-                <div class="flex gap-2">
-                    <input type="number" id="other-val" class="flex-1 min-w-0" placeholder="金額" inputmode="decimal">
-                    <button onclick="addItem('o')" class="bg-purple-500 text-white px-4 rounded-xl font-bold active:opacity-70 shrink-0">＋</button>
-                </div>
-                <div id="list-o" class="list-scroll mt-2 space-y-1"></div>
-            </div>
 
-            <!-- 支出區 - 優化佈局防止溢出 -->
-            <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
-                <div class="flex justify-between items-end mb-2">
-                    <label class="text-[10px] font-bold text-red-500 uppercase tracking-widest">支出項目</label>
-                    <span id="total-exp-label" class="text-sm font-black text-red-600 dark:text-red-400">總計: $0</span>
+                <div class="pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="text-[10px] font-bold text-red-500 uppercase">支出</label>
+                        <span id="total-exp-label" class="text-[10px] font-black text-red-500">$0</span>
+                    </div>
+                    <div class="expense-row">
+                        <!-- 類別格拉長至 100px -->
+                        <select id="exp-cat" class="w-[100px] shrink-0 text-[11px] p-2">
+                            <option>隧道</option>
+                            <option>油/電</option>
+                            <option>供車</option>
+                            <option>抄牌</option>
+                            <option>其他</option>
+                        </select>
+                        <!-- 金額框自動適應剩餘空間 -->
+                        <input type="number" id="exp-val" class="flex-1 min-w-0 text-sm" placeholder="金額" inputmode="decimal">
+                        <button onclick="addItem('e')" class="bg-red-500 text-white w-12 h-11 flex items-center justify-center rounded-xl font-bold shrink-0">＋</button>
+                    </div>
+                    <div id="list-e" class="list-scroll mt-2 space-y-1"></div>
                 </div>
-                <div class="flex gap-2 items-center">
-                    <select id="exp-cat" class="w-[85px] shrink-0 text-sm">
-                        <option>隧道</option>
-                        <option>油/電</option>
-                        <option>供車</option>
-                        <option>抄牌</option>
-                        <option>其他</option>
-                    </select>
-                    <input type="number" id="exp-val" class="flex-1 min-w-0" placeholder="金額" inputmode="decimal">
-                    <button onclick="addItem('e')" class="bg-red-500 text-white px-4 py-2.5 rounded-xl font-bold active:opacity-70 shrink-0">＋</button>
-                </div>
-                <div id="list-e" class="list-scroll mt-2 space-y-1"></div>
             </div>
         </div>
 
-        <div class="glass-card p-5">
-            <h3 class="font-bold text-sm mb-4">本週純利分析</h3>
-            <div class="chart-viewport" id="chart-area">
-                <div class="y-guide" style="top: 0;"></div>
-                <div class="absolute right-0 top-[-8px] text-[8px] text-gray-400 font-bold uppercase">最高 $4,000</div>
-                <div class="y-guide" style="top: 50%;"></div>
+        <!-- 數據分析滑動卡片 -->
+        <div class="glass-card">
+            <div class="swiper-container" id="swiper">
+                <div class="swiper-wrapper" id="swiper-wrapper">
+                    
+                    <!-- 第一頁：本週分析 -->
+                    <div class="swiper-slide">
+                        <h3 class="font-bold text-sm mb-4">本週純利分析</h3>
+                        <div class="chart-viewport" id="chart-area">
+                            <div class="absolute left-0 right-0 border-t border-dashed border-gray-200 dark:border-gray-700 opacity-30" style="top:0"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1 uppercase">
+                            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            <div class="bg-gray-50 dark:bg-white/5 p-2 rounded-xl">
+                                <p class="text-[8px] font-bold text-gray-400">週總流水</p>
+                                <p id="week-total-revenue" class="text-sm font-black">$0</p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-white/5 p-2 rounded-xl text-right">
+                                <p class="text-[8px] font-bold text-gray-400">週總支出</p>
+                                <p id="week-total-expense" class="text-sm font-black text-red-500">$0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二頁：本月概覽 -->
+                    <div class="swiper-slide monthly-overview-slide">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-sm">本月概覽 (<span id="month-label">---</span>)</h3>
+                        </div>
+                        <div class="pie-container">
+                            <svg class="pie-svg" width="140" height="140" viewBox="0 0 32 32" id="month-pie-chart"></svg>
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div class="w-16 h-16 bg-white dark:bg-[#1c1c1e] rounded-full shadow-inner"></div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">本月純利數據</p>
+                            <h4 id="month-total-profit" class="text-4xl font-black text-blue-600 my-1">$0</h4>
+                            <div class="flex justify-center gap-6 mt-3">
+                                <div class="text-left">
+                                    <p class="text-[8px] font-bold text-gray-400 uppercase">月總收入</p>
+                                    <p id="month-rev-val" class="text-lg font-bold text-blue-500">$0</p>
+                                </div>
+                                <div class="text-right border-l border-gray-100 dark:border-gray-800 pl-6">
+                                    <p class="text-[8px] font-bold text-gray-400 uppercase">月總支出</p>
+                                    <p id="month-exp-val" class="text-lg font-bold text-red-500">$0</p>
+                                </div>
+                            </div>
+                            <div id="week-legend" class="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px] font-bold text-gray-400 mt-4"></div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
-            <div class="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1 uppercase">
-                <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
-            </div>
-            
-            <div id="week-summary-details" class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-4">
-                <div class="bg-gray-50 dark:bg-white/5 p-3 rounded-2xl">
-                    <p class="text-[9px] font-bold text-gray-400 uppercase">本週總流水</p>
-                    <p id="week-total-revenue" class="text-lg font-black">$0</p>
-                </div>
-                <div class="bg-gray-50 dark:bg-white/5 p-3 rounded-2xl">
-                    <p class="text-[9px] font-bold text-gray-400 uppercase">本週總支出</p>
-                    <p id="week-total-expense" class="text-lg font-black text-red-500">$0</p>
-                </div>
-                <div class="col-span-2 bg-green-500/10 p-3 rounded-2xl flex justify-between items-center">
-                    <p class="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-widest">本週累積純利</p>
-                    <p id="week-total-profit" class="text-xl font-black text-green-600 dark:text-green-400">$0</p>
-                </div>
+            <div class="dot-container">
+                <div class="dot active" id="dot-0" onclick="goToPage(0)"></div>
+                <div class="dot" id="dot-1" onclick="goToPage(1)"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'DRIVER_APP_DATA_PERSISTENT'; 
-        const THEME_KEY = 'DRIVER_APP_THEME_PERSISTENT';
-        const PRIVACY_KEY = 'DRIVER_APP_PRIVACY_ACCEPTED';
-        const MAX_VAL = 4000;
-        
-        function migrateData() {
-            const oldKeys = ['DRIVER_DATA_150', 'DRIVER_DATA_V1'];
-            let combinedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            oldKeys.forEach(oldKey => {
-                const oldData = localStorage.getItem(oldKey);
-                if (oldData) {
-                    try {
-                        const parsed = JSON.parse(oldData);
-                        combinedData = { ...parsed, ...combinedData };
-                    } catch(e) {}
-                }
-            });
-            return combinedData;
-        }
-
-        let db = migrateData();
+        const STORAGE_KEY = 'DRIVER_APP_DATA_V1';
+        let db = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         let currentDay = "";
         let isDarkMode = false;
+        let currentPage = 0;
 
         window.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
             currentDay = new Date(now.getTime() - offset).toISOString().split('T')[0];
             
-            checkPrivacy();
-            initTheme();
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                manualToggleTheme();
+            }
+
             setupListeners();
             loadDay(currentDay);
         });
-
-        function checkPrivacy() {
-            const accepted = localStorage.getItem(PRIVACY_KEY);
-            if (!accepted) {
-                document.getElementById('privacy-modal').style.display = 'flex';
-            }
-        }
-
-        function acceptPrivacy() {
-            localStorage.setItem(PRIVACY_KEY, 'true');
-            document.getElementById('privacy-modal').style.display = 'none';
-        }
 
         function setupListeners() {
             document.getElementById('date-picker').onchange = (e) => loadDay(e.target.value);
             ['val-u', 'val-a', 'val-d', 'val-t'].forEach(id => {
                 document.getElementById(id).oninput = saveData;
             });
-        }
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem(THEME_KEY);
-            isDarkMode = savedTheme === 'dark';
-            applyTheme();
+            
+            let touchStartX = 0;
+            const swiper = document.getElementById('swiper');
+            swiper.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX, {passive: true});
+            swiper.addEventListener('touchend', e => {
+                let touchEndX = e.changedTouches[0].screenX;
+                if (touchStartX - touchEndX > 40) goToPage(1);
+                if (touchEndX - touchStartX > 40) goToPage(0);
+            }, {passive: true});
         }
 
         function manualToggleTheme() {
             isDarkMode = !isDarkMode;
-            localStorage.setItem(THEME_KEY, isDarkMode ? 'dark' : 'light');
-            applyTheme();
-        }
-
-        function applyTheme() {
             document.body.classList.toggle('dark-mode', isDarkMode);
             document.getElementById('theme-btn').innerText = isDarkMode ? '☀️' : '🌙';
-            updateChart();
+        }
+
+        function goToPage(idx) {
+            currentPage = idx;
+            document.getElementById('swiper-wrapper').style.transform = `translateX(-${idx * 50}%)`;
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
         }
 
         function loadDay(dateStr) {
@@ -346,6 +344,7 @@
             document.getElementById('date-picker').value = dateStr;
             const d = new Date(dateStr);
             document.getElementById('date-label').innerText = d.toLocaleDateString('zh-HK', { month:'short', day:'numeric', weekday:'short' });
+            
             if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
             const data = db[currentDay];
             document.getElementById('val-u').value = data.u || "";
@@ -391,116 +390,123 @@
 
         function renderLists() {
             const data = db[currentDay];
-            const sumO = data.o ? data.o.reduce((acc, i) => acc + i.v, 0) : 0;
-            const sumE = data.e ? data.e.reduce((acc, i) => acc + i.v, 0) : 0;
-            document.getElementById('total-other-label').innerText = `總計: $${sumO}`;
-            document.getElementById('total-exp-label').innerText = `總計: $${sumE}`;
+            const sumO = (data.o || []).reduce((acc, i) => acc + i.v, 0);
+            const sumE = (data.e || []).reduce((acc, i) => acc + i.v, 0);
+            document.getElementById('total-other-label').innerText = `$${sumO}`;
+            document.getElementById('total-exp-label').innerText = `$${sumE}`;
             
             document.getElementById('list-o').innerHTML = (data.o || []).slice().reverse().map(i => `
-                <div class="flex justify-between items-center bg-purple-500/10 p-2 rounded-lg">
-                    <span class="text-[10px] font-black text-purple-500 uppercase tracking-widest">其他收入</span>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-sm text-purple-600 dark:text-purple-400">$${i.v}</span>
-                        <button onclick="removeItem('o', ${i.id})" class="text-gray-400 px-1 ml-1">✕</button>
-                    </div>
+                <div class="flex justify-between items-center bg-purple-500/10 p-2 rounded-lg text-xs font-bold">
+                    <span>其他收入</span>
+                    <div class="flex items-center gap-2"><span>$${i.v}</span><button onclick="removeItem('o', ${i.id})">✕</button></div>
                 </div>
             `).join('');
             
             document.getElementById('list-e').innerHTML = (data.e || []).slice().reverse().map(i => `
-                <div class="flex justify-between items-center bg-red-500/10 p-2 rounded-lg">
-                    <span class="text-[10px] font-black text-red-500 uppercase tracking-widest">${i.c}</span>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-sm text-red-600 dark:text-red-400">$${i.v}</span>
-                        <button onclick="removeItem('e', ${i.id})" class="text-gray-400 px-1 ml-1">✕</button>
-                    </div>
+                <div class="flex justify-between items-center bg-red-500/10 p-2 rounded-lg text-xs font-bold">
+                    <span>${i.c}</span>
+                    <div class="flex items-center gap-2"><span>$${i.v}</span><button onclick="removeItem('e', ${i.id})">✕</button></div>
                 </div>
             `).join('');
         }
 
         function refreshUI() {
             const data = db[currentDay];
-            const sumO = data.o ? data.o.reduce((acc, i) => acc + i.v, 0) : 0;
-            const sumE = data.e ? data.e.reduce((acc, i) => acc + i.v, 0) : 0;
-            const totalIn = (data.u||0) + (data.a||0) + (data.d||0) + (data.t||0) + sumO;
-            const net = Math.round(totalIn - sumE);
+            const sumO = (data.o || []).reduce((acc, i) => acc + i.v, 0);
+            const sumE = (data.e || []).reduce((acc, i) => acc + i.v, 0);
+            const net = Math.round(((data.u||0) + (data.a||0) + (data.d||0) + (data.t||0) + sumO) - sumE);
             
-            const profitEl = document.getElementById('summary-profit');
-            profitEl.innerText = `$${net.toLocaleString()}`;
-            profitEl.className = `text-3xl font-black ${net < 0 ? 'text-red-500' : 'text-green-500'}`;
-            updateChart();
+            const pEl = document.getElementById('summary-profit');
+            pEl.innerText = `$${net.toLocaleString()}`;
+            pEl.className = `text-3xl font-black ${net < 0 ? 'text-red-500' : 'text-green-500'}`;
+            
+            updateCharts();
         }
 
-        function updateChart() {
+        function updateCharts() {
             const now = new Date(currentDay);
+            const MAX_VAL = 4000;
+
             const dayIdx = (now.getDay() + 6) % 7;
-            const start = new Date(now);
-            start.setDate(now.getDate() - dayIdx);
+            const startW = new Date(now);
+            startW.setDate(now.getDate() - dayIdx);
             
             const area = document.getElementById('chart-area');
-            const wrappers = area.querySelectorAll('.bar-wrapper');
-            wrappers.forEach(w => w.remove());
-
+            area.querySelectorAll('.bar-wrapper').forEach(w => w.remove());
             let wRev = 0, wExp = 0;
 
             for(let i=0; i<7; i++) {
-                const date = new Date(start);
-                date.setDate(start.getDate() + i);
+                const date = new Date(startW);
+                date.setDate(startW.getDate() + i);
                 const k = date.toISOString().split('T')[0];
                 const d = db[k] || { u:0, a:0, d:0, t:0, o:[], e:[] };
-                
-                const sumO = d.o ? d.o.reduce((a,b)=>a+b.v,0) : 0;
-                const sumE = d.e ? d.e.reduce((a,b)=>a+b.v,0) : 0;
-                const dailyIn = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + sumO;
-                const net = dailyIn - sumE;
-                
-                wRev += dailyIn;
-                wExp += sumE;
+                const sO = (d.o || []).reduce((a,b)=>a+b.v,0);
+                const sE = (d.e || []).reduce((a,b)=>a+b.v,0);
+                const rev = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + sO;
+                const net = rev - sE;
+                wRev += rev; wExp += sE;
 
                 const wrapper = document.createElement('div');
-                wrapper.className = 'bar-wrapper';
-                
-                const label = document.createElement('div');
-                label.className = 'bar-total-label';
-                label.innerText = net !== 0 ? `$${Math.round(net)}` : "";
-                wrapper.appendChild(label);
-
+                wrapper.className = 'flex-1 flex flex-col justify-end items-center h-full relative bar-wrapper';
                 const stack = document.createElement('div');
-                stack.className = 'bar-stack';
-                stack.style.height = `${Math.min((Math.max(0, net)/MAX_VAL)*100, 100)}%`;
-                
-                if (net > 0) {
-                    const total = dailyIn;
-                    const segments = [
-                        { v: d.u||0, c: 'bg-uber' },
-                        { v: d.a||0, c: 'bg-amap' },
-                        { v: d.d||0, c: 'bg-didi' },
-                        { v: d.t||0, c: 'bg-tada' },
-                        { v: sumO, c: 'bg-other' }
-                    ];
-                    segments.forEach(seg => {
-                        if (seg.v > 0) {
-                            const part = document.createElement('div');
-                            part.className = `w-full ${seg.c}`;
-                            part.style.height = `${(seg.v / total) * 100}%`;
-                            stack.appendChild(part);
-                        }
-                    });
-                } else if (net < 0) {
-                    stack.classList.add('bg-red-500');
-                    stack.style.height = `${Math.min((Math.abs(net)/MAX_VAL)*100, 100)}%`;
-                }
-
-                if(k === currentDay) {
-                    stack.style.boxShadow = '0 0 0 2px #0a84ff';
-                }
-
+                stack.className = 'bar-stack w-full';
+                stack.style.height = `${Math.min((Math.max(2, net)/MAX_VAL)*100, 100)}%`;
+                if(k === currentDay) stack.style.boxShadow = '0 0 0 2px #0a84ff';
                 wrapper.appendChild(stack);
                 area.appendChild(wrapper);
             }
-
             document.getElementById('week-total-revenue').innerText = `$${Math.round(wRev).toLocaleString()}`;
             document.getElementById('week-total-expense').innerText = `$${Math.round(wExp).toLocaleString()}`;
-            document.getElementById('week-total-profit').innerText = `$${Math.round(wRev - wExp).toLocaleString()}`;
+
+            const targetMonth = now.getMonth();
+            const targetYear = now.getFullYear();
+            const monthStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+            document.getElementById('month-label').innerText = now.toLocaleDateString('zh-HK', { month: 'long' });
+            
+            let mRev = 0, mExp = 0;
+            let weeklyRevenues = [0, 0, 0, 0, 0, 0];
+
+            Object.keys(db).forEach(k => {
+                if (k.startsWith(monthStr)) {
+                    const d = db[k];
+                    const dayRev = (d.u||0) + (d.a||0) + (d.d||0) + (d.t||0) + (d.o ? d.o.reduce((a,b)=>a+b.v,0) : 0);
+                    mRev += dayRev;
+                    mExp += (d.e ? d.e.reduce((a,b)=>a+b.v,0) : 0);
+                    
+                    const date = new Date(k);
+                    const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
+                    const startOffset = (firstDayOfMonth.getDay() + 6) % 7; 
+                    const weekIdx = Math.floor((date.getDate() + startOffset - 1) / 7);
+                    weeklyRevenues[weekIdx] += dayRev;
+                }
+            });
+
+            document.getElementById('month-total-profit').innerText = `$${Math.round(mRev - mExp).toLocaleString()}`;
+            document.getElementById('month-rev-val').innerText = `$${Math.round(mRev).toLocaleString()}`;
+            document.getElementById('month-exp-val').innerText = `$${Math.round(mExp).toLocaleString()}`;
+
+            const pieSvg = document.getElementById('month-pie-chart');
+            const legend = document.getElementById('week-legend');
+            pieSvg.innerHTML = ""; legend.innerHTML = "";
+
+            const colors = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+            let acc = 0;
+            weeklyRevenues.forEach((rev, idx) => {
+                if (mRev === 0 || rev <= 0) return;
+                const p = (rev / mRev) * 100;
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("r", "16"); circle.setAttribute("cx", "16"); circle.setAttribute("cy", "16");
+                circle.setAttribute("fill", "transparent");
+                circle.setAttribute("stroke", colors[idx]);
+                circle.setAttribute("stroke-width", "32");
+                circle.setAttribute("stroke-dasharray", `${p} 100`);
+                circle.setAttribute("stroke-dashoffset", `-${acc}`);
+                pieSvg.appendChild(circle);
+                
+                legend.innerHTML += `<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${colors[idx]}"></span>第${idx+1}週</div>`;
+                acc += p;
+            });
+            if(mRev === 0) pieSvg.innerHTML = `<circle r="16" cx="16" cy="16" fill="transparent" stroke="#f3f4f6" stroke-width="32" stroke-dasharray="100 100" />`;
         }
     </script>
 </body>
