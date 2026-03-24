@@ -42,7 +42,6 @@
             overflow: hidden;
         }
 
-        /* 滑動分頁樣式 */
         .swiper-container {
             position: relative;
             width: 100%;
@@ -61,7 +60,6 @@
             padding: 20px;
         }
 
-        /* 強制本月概覽背景為白色 */
         .monthly-overview-slide {
             background-color: #ffffff !important;
             color: #000000 !important;
@@ -139,7 +137,6 @@
             font-size: 16px !important;
         }
 
-        /* 支出行排版優化 */
         .expense-row {
             display: flex;
             gap: 6px;
@@ -152,7 +149,7 @@
 
     <div class="max-w-md mx-auto space-y-4 pb-24">
         
-        <!-- Header -->
+        <!-- 頂部欄 -->
         <div class="flex justify-between items-start pt-4">
             <div>
                 <h1 class="text-xl font-black italic">司機助手 <span class="text-[10px] not-italic opacity-30">V1.6.9</span></h1>
@@ -170,7 +167,7 @@
             </div>
         </div>
 
-        <!-- 輸入區域 -->
+        <!-- 數據輸入區 -->
         <div class="glass-card p-5 space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -191,7 +188,7 @@
                 </div>
             </div>
 
-            <!-- 其他收入與支出 -->
+            <!-- 其他收支 -->
             <div class="grid grid-cols-1 gap-4 pt-2">
                 <div>
                     <div class="flex justify-between items-end mb-1">
@@ -211,7 +208,6 @@
                         <span id="total-exp-label" class="text-[10px] font-black text-red-500">$0</span>
                     </div>
                     <div class="expense-row">
-                        <!-- 類別格拉長至 100px -->
                         <select id="exp-cat" class="w-[100px] shrink-0 text-[11px] p-2">
                             <option>隧道</option>
                             <option>油/電</option>
@@ -219,7 +215,6 @@
                             <option>抄牌</option>
                             <option>其他</option>
                         </select>
-                        <!-- 金額框自動適應剩餘空間 -->
                         <input type="number" id="exp-val" class="flex-1 min-w-0 text-sm" placeholder="金額" inputmode="decimal">
                         <button onclick="addItem('e')" class="bg-red-500 text-white w-12 h-11 flex items-center justify-center rounded-xl font-bold shrink-0">＋</button>
                     </div>
@@ -228,12 +223,12 @@
             </div>
         </div>
 
-        <!-- 數據分析滑動卡片 -->
+        <!-- 分析圖表卡片 -->
         <div class="glass-card">
             <div class="swiper-container" id="swiper">
                 <div class="swiper-wrapper" id="swiper-wrapper">
                     
-                    <!-- 第一頁：本週分析 -->
+                    <!-- 週分析 -->
                     <div class="swiper-slide">
                         <h3 class="font-bold text-sm mb-4">本週純利分析</h3>
                         <div class="chart-viewport" id="chart-area">
@@ -254,7 +249,7 @@
                         </div>
                     </div>
 
-                    <!-- 第二頁：本月概覽 -->
+                    <!-- 月概覽 -->
                     <div class="swiper-slide monthly-overview-slide">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="font-bold text-sm">本月概覽 (<span id="month-label">---</span>)</h3>
@@ -292,24 +287,38 @@
     </div>
 
     <script>
+        // 核心存儲密鑰，請確保 V1 與之前一致
         const STORAGE_KEY = 'DRIVER_APP_DATA_V1';
-        let db = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        let db = {};
         let currentDay = "";
         let isDarkMode = false;
         let currentPage = 0;
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.onload = function() {
+            // 從本地加載數據
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                try {
+                    db = JSON.parse(savedData);
+                } catch (e) {
+                    console.error("數據格式錯誤", e);
+                    db = {};
+                }
+            }
+
+            // 初始化日期
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
             currentDay = new Date(now.getTime() - offset).toISOString().split('T')[0];
             
+            // 深色模式探測
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 manualToggleTheme();
             }
 
             setupListeners();
             loadDay(currentDay);
-        });
+        };
 
         function setupListeners() {
             document.getElementById('date-picker').onchange = (e) => loadDay(e.target.value);
@@ -345,30 +354,40 @@
             const d = new Date(dateStr);
             document.getElementById('date-label').innerText = d.toLocaleDateString('zh-HK', { month:'short', day:'numeric', weekday:'short' });
             
-            if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
+            // 確保該日期對象存在
+            if(!db[currentDay]) {
+                db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
+            }
+
             const data = db[currentDay];
             document.getElementById('val-u').value = data.u || "";
             document.getElementById('val-a').value = data.a || "";
             document.getElementById('val-d').value = data.d || "";
             document.getElementById('val-t').value = data.t || "";
+            
             renderLists();
             refreshUI();
         }
 
         function saveData() {
             if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
+            
             db[currentDay].u = parseFloat(document.getElementById('val-u').value) || 0;
             db[currentDay].a = parseFloat(document.getElementById('val-a').value) || 0;
             db[currentDay].d = parseFloat(document.getElementById('val-d').value) || 0;
             db[currentDay].t = parseFloat(document.getElementById('val-t').value) || 0;
+            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
             refreshUI();
         }
 
         function addItem(type) {
+            if(!db[currentDay]) db[currentDay] = { u:0, a:0, d:0, t:0, o:[], e:[] };
+            
             const valInput = document.getElementById(type === 'o' ? 'other-val' : 'exp-val');
             const val = parseFloat(valInput.value);
             if(!val) return;
+
             if(type === 'o') {
                 if(!db[currentDay].o) db[currentDay].o = [];
                 db[currentDay].o.push({ v: val, id: Date.now() });
@@ -377,21 +396,25 @@
                 const cat = document.getElementById('exp-cat').value;
                 db[currentDay].e.push({ v: val, c: cat, id: Date.now() });
             }
+            
             valInput.value = "";
             renderLists();
             saveData();
         }
 
         function removeItem(type, id) {
-            db[currentDay][type] = db[currentDay][type].filter(item => item.id !== id);
-            renderLists();
-            saveData();
+            if(db[currentDay] && db[currentDay][type]) {
+                db[currentDay][type] = db[currentDay][type].filter(item => item.id !== id);
+                renderLists();
+                saveData();
+            }
         }
 
         function renderLists() {
-            const data = db[currentDay];
+            const data = db[currentDay] || { o:[], e:[] };
             const sumO = (data.o || []).reduce((acc, i) => acc + i.v, 0);
             const sumE = (data.e || []).reduce((acc, i) => acc + i.v, 0);
+            
             document.getElementById('total-other-label').innerText = `$${sumO}`;
             document.getElementById('total-exp-label').innerText = `$${sumE}`;
             
@@ -411,7 +434,7 @@
         }
 
         function refreshUI() {
-            const data = db[currentDay];
+            const data = db[currentDay] || { u:0, a:0, d:0, t:0, o:[], e:[] };
             const sumO = (data.o || []).reduce((acc, i) => acc + i.v, 0);
             const sumE = (data.e || []).reduce((acc, i) => acc + i.v, 0);
             const net = Math.round(((data.u||0) + (data.a||0) + (data.d||0) + (data.t||0) + sumO) - sumE);
@@ -477,7 +500,7 @@
                     const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
                     const startOffset = (firstDayOfMonth.getDay() + 6) % 7; 
                     const weekIdx = Math.floor((date.getDate() + startOffset - 1) / 7);
-                    weeklyRevenues[weekIdx] += dayRev;
+                    if(weeklyRevenues[weekIdx] !== undefined) weeklyRevenues[weekIdx] += dayRev;
                 }
             });
 
